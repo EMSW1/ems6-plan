@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMS6 | PLAN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+        /* Lwan dyal Mode Normal (Light) */
+        --bg-body: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+        --card-bg: rgba(255, 255, 255, 0.85); /* Khllina l-carte kat-fout chwiya l-lon dyal l-background */
+        --text-main: #1e293b;
+        --border-color: rgba(255, 255, 255, 0.4);
+        --input-bg: #f8fafc;
+        --label-color: #64748b;
+    }
+
+       .dark {
+        /* Mix dyal lwan fati7a o pro: Royal Blue, Deep Purple, o Electric Cyan */
+        --bg-body: linear-gradient(-45deg, #060b19, #1e3a8a, #581c87, #0891b2, #060b19);
+        --card-bg: rgba(15, 23, 42, 0.75); /* Card ghameq chwiya bach lwan li lor ibano f l-jnib */
+        --text-main: #f8fafc;
+        --border-color: rgba(255, 255, 255, 0.1);
+        --input-bg: rgba(30, 41, 59, 0.5);
+        --label-color: #cbd5e1;
+    }
+
+       body { 
+        font-family: 'Inter', sans-serif; 
+        background: var(--bg-body); 
+        background-size: 300% 300%; /* Sghrt l-size bach lwan idkhlo f b3dyathom ktr */
+        animation: gradientBG 10s ease infinite; /* 10s tkhli l-animation tban 7iya */
+        color: var(--text-main); 
+        transition: all 0.3s ease; 
+        min-height: 100vh;
+    }
+        
+	@keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+		
+         .glass-card { 
+        background: var(--card-bg); 
+        backdrop-filter: blur(10px); 
+        border: 1px solid var(--border-color);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+    }
+
+        label { color: var(--label-color) !important; }
+        select, input, textarea { color: var(--text-main) !important; background-color: var(--input-bg) !important; }
+        
+        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1rem; padding-right: 2rem; }
+
+        .deploy-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 6px solid #e2e8f0; }
+        .deploy-card:hover { transform: translateY(-2px); border-left-color: #2563eb; }
+
+        .dark .deploy-card { border-left-color: #334155; }
+        .dark .deploy-card:hover { border-left-color: #3b82f6; }
+
+        .plat-btn { transition: all 0.2s; border: 2px solid transparent; background: var(--card-bg); color: var(--text-main); }
+        .plat-btn.active { 
+            border-color: #2563eb; 
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        #loadingOverlay, #loginOverlay { 
+            background: var(--bg-body); 
+            backdrop-filter: blur(8px);
+            position: fixed; inset: 0; z-index: 200; 
+            align-items: center; justify-content: center; display: flex; flex-direction: column; 
+        }
+
+        .viewer-mode .admin-only, .viewer-mode .super-only { display: none !important; }
+        .admin-mode .super-only { display: none !important; }
+        .admin-locked { pointer-events: none; opacity: 0.8; }
+
+        #saveBtn { transition: all 0.3s; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+        #saveBtn:disabled { opacity: 0.5; cursor: not-allowed; background: #94a3b8; transform: scale(1) !important; }
+
+        #rotDetailPanel { 
+            display: none; position: fixed; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); z-index: 300; width: 95%; max-width: 500px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .viewer-mode #statsSection, .viewer-mode #historySection { display: none !important; }
+        .viewer-mode header .admin-only { display: none !important; }
+
+        .target-only .plat-btn:not(.active) { display: none !important; }
+        
+        .viewer-mode input, .viewer-mode select, .viewer-mode textarea {
+            border: none !important; background: transparent !important;
+            pointer-events: none !important; color: var(--text-main) !important; padding-left: 0 !important;
+        }
+        .viewer-mode .inp-id { color: #3b82f6 !important; font-weight: 900; }
+        .viewer-only-btn { display: none !important; }
+        .viewer-mode .viewer-only-btn { display: flex !important; }
+
+        #darkToggle { transition: all 0.3s; }
+        #darkToggle:active { transform: scale(0.9); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="loginOverlay">
+        <div class="glass-card p-10 rounded-[2.5rem] w-full max-w-sm text-center border">
+            <div class="w-20 h-20 bg-blue-600 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-xl">
+                <span class="text-white text-3xl font-black italic">W</span>
+            </div>
+            <h2 class="text-3xl font-black mb-2 uppercase tracking-tighter">EMS6 ACCESS</h2>
+            <input type="password" id="accessKey" onkeypress="if(event.key==='Enter') checkAccess()" placeholder="••••••••" class="w-full p-4 border-none rounded-2xl mb-4 text-center font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+            <button onclick="checkAccess()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black uppercase shadow-lg">Unlock</button>
+        </div>
+    </div>
+
+    <div id="rotDetailPanel" class="glass-card p-8 rounded-[2rem] border-t-8 border-blue-600">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-black uppercase italic">Rotation Details</h3>
+            <button onclick="closeRot()" class="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-full">✕</button>
+        </div>
+        <textarea id="rotDetailText" oninput="checkChanges()" class="w-full h-72 p-4 border-none rounded-2xl font-mono text-xs uppercase outline-none focus:ring-2 focus:ring-blue-400 transition-all"></textarea>
+        <button onclick="closeRot()" class="w-full mt-6 bg-blue-600 text-white py-4 rounded-2xl font-black uppercase">CLOSE</button>
+    </div>
+
+    <div id="loadingOverlay" style="display:none;"><div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600"></div></div>
+
+    <div id="appContent" class="hidden max-w-6xl mx-auto space-y-6">
+        <header class="glass-card p-6 rounded-[2rem] flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black italic uppercase tracking-tighter">EMS6 <span class="text-blue-600">PLAN</span></h1>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">REPORTING</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="darkToggle" onclick="toggleDarkMode()" class="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl hover:scale-110 transition-all">
+                    <span class="dark:hidden text-lg">🌙</span><span class="hidden dark:inline text-lg">☀️</span>
+                </button>
+                <span id="roleBadge" class="text-[9px] font-black px-4 py-1.5 rounded-full uppercase text-white">---</span>
+                <button onclick="logout()" class="admin-only p-2.5 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button onclick="selectPlatform('WEB')" id="btn-WEB" class="plat-btn glass-card p-6 rounded-3xl font-black uppercase flex justify-between items-center group">
+                <span class="text-lg italic">WEB</span>
+                <input type="number" id="conf-WEB" class="w-12 h-8 text-center rounded-lg text-xs" onchange="updateGlobalConfig('WEB', this.value)" onclick="event.stopPropagation()" disabled>
+            </button>
+            <button onclick="selectPlatform('SELENIUM')" id="btn-SELENIUM" class="plat-btn glass-card p-6 rounded-3xl font-black uppercase flex justify-between items-center group">
+                <span class="text-lg italic">SELENIUM</span>
+                <input type="number" id="conf-SELENIUM" class="w-12 h-8 text-center rounded-lg text-xs" onchange="updateGlobalConfig('SELENIUM', this.value)" onclick="event.stopPropagation()" disabled>
+            </button>
+            <button onclick="selectPlatform('AUTOMAT')" id="btn-AUTOMAT" class="plat-btn glass-card p-6 rounded-3xl font-black uppercase flex justify-between items-center group">
+                <span class="text-lg italic">AUTOMAT</span>
+                <input type="number" id="conf-AUTOMAT" class="w-12 h-8 text-center rounded-lg text-xs" onchange="updateGlobalConfig('AUTOMAT', this.value)" onclick="event.stopPropagation()" disabled>
+            </button>
+        </div>
+
+        <div id="statsSection" class="glass-card p-4 rounded-[2rem] grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                <label class="block text-[12px] font-black uppercase text-center mb-1">Seeds</label>
+                <input type="text" id="statSeeds" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
+            </div>
+            <div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                <label class="block text-[12px] font-black uppercase text-center mb-1">RDPs</label>
+                <input type="text" id="statRDPs" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
+            </div>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                <label class="block text-[12px] font-black uppercase text-center mb-1">Sessions</label>
+                <input type="text" id="statSessions" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
+            </div>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                <label class="block text-[12px] font-black uppercase text-center mb-1">NBR-DEPLOYS/day</label>
+                <input type="text" id="nbrseploysperday" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
+            </div>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                <label class="block text-[12px] font-black uppercase text-center mb-1">NBR-SEEDS/h</label>
+                <input type="text" id="nbrseedsperhour" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
+            </div>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                <label class="block text-[12px] font-black uppercase text-center mb-1">NBR-SEEDS/day</label>
+                <input type="text" id="nbrseedsperday" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
+            </div>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                <label class="block text-[12px] font-black uppercase text-center mb-1">NBR-LANCEMENT</label>
+                <input type="text" id="nbrlancement" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
+            </div>
+            <div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 text-center">
+                <label class="block text-[12px] font-black uppercase mb-1">Rotation</label>
+                <div class="flex justify-center items-center gap-0.5 font-black text-blue-500 text-xs mb-1">
+                    <input type="number" id="rotMin" oninput="checkChanges()" class="stat-field w-8 bg-transparent text-center outline-none italic"> / <input type="number" id="rotMax" oninput="checkChanges()" class="stat-field w-8 bg-transparent text-center outline-none italic">
+                </div>
+                <button onclick="openRot()" class="bg-blue-600 text-white text-[8px] px-3 py-1 rounded-full font-black uppercase">Details</button>
+            </div>
+            
+            <div class="p-3 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 text-center">
+                <label class="block text-[12px] font-black uppercase mb-1">Quality</label>
+                <input type="text" id="statQuality" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-emerald-500 text-center outline-none text-sm uppercase">
+            </div>
+            <div class="p-3 bg-rose-500/5 rounded-2xl border border-rose-500/10 text-center">
+                <label class="block text-[12px] font-black uppercase mb-1">Paused</label>
+                <input type="text" id="statPaused" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-rose-500 text-center outline-none text-sm uppercase">
+            </div>
+            <div class="p-3 bg-orange-500/5 rounded-2xl border border-orange-500/10 text-center">
+                <label class="block text-[12px] font-black uppercase mb-1">Period</label>
+                <div class="flex gap-1"><input type="text" id="statStart" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-orange-500 text-[10px] text-center outline-none uppercase" placeholder="S"><input type="text" id="statEnd" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-orange-500 text-[10px] text-center outline-none uppercase" placeholder="E"></div>
+            </div>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                <label class="block text-[12px] font-black uppercase text-center mb-1">Proxy</label>
+                <input type="text" id="statProxy" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
+            </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-[2rem] grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div class="flex gap-4 items-center">
+                <div class="admin-only w-1/3">
+                    <label class="block text-[12px] font-black uppercase mb-2 italic">EDITOR</label>
+                    <select id="editorSelect" onchange="checkChanges()" class="w-full p-3 border-none rounded-2xl font-black text-[10px] outline-none">
+                        <option value="MOHAMED IAROCHENE">MOHAMED IAROCHENE</option>
+                        <option value="MEHDI AOURACHE">MEHDI AOURACHE</option>
+                        <option value="ALLAL GASMI">ALLAL GASMI</option>
+                        <option value="ISMAIL BENKIRANE">ISMAIL BENKIRANE</option>
+                        <option value="ANOUAR MOUATASSIM">ANOUAR MOUATASSIM</option>
+                    </select>
+                </div>
+                <div class="admin-only w-1/4">
+                    <label class="block text-[12px] font-black uppercase mb-2">NBR-DEPLOYS</label>
+                    <input type="number" id="deployCount" oninput="renderDeploys(); checkChanges();" class="w-full p-3 rounded-2xl font-black text-blue-600 text-center border-none">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-[12px] font-black text-blue-500 uppercase mb-2 italic">KEYWORD FILTER</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="filterInput" oninput="checkChanges()" class="w-full p-3 border-2 border-blue-500/30 rounded-2xl font-black text-blue-600 bg-blue-500/5 text-center uppercase focus:border-blue-500 outline-none">
+                        <button onclick="copyAllIDs(this)" class="viewer-only-btn hidden bg-blue-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Copy IDs</button>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center bg-slate-500/5 p-4 rounded-[1.5rem] border border-dashed border-slate-300">
+                <p class="text-[12px] font-black uppercase mb-1">DIVISION SEEDS BY DEPLOYS</p>
+                <div id="distDisplay" class="font-black text-xs italic tracking-tighter">---</div>
+            </div>
+        </div>
+
+        <div id="deploysGrid" class="space-y-4 pb-20"></div>
+
+        <div class="admin-only fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 flex gap-3 z-50">
+            <button id="saveBtn" disabled onclick="saveAll()" class="w-full text-white py-6 rounded-[2rem] font-black text-xl shadow-2xl uppercase italic border-b-4 border-blue-900 flex items-center justify-center gap-3 active:scale-95">Save Changes</button>
+            <button id="superSaveBtn" onclick="superQuickSave()" class="super-only hidden bg-purple-600 hover:bg-purple-700 text-white px-10 py-6 rounded-[2rem] font-black text-xs shadow-2xl border-b-4 border-purple-900 uppercase italic active:scale-95">⚡ Edit Only</button>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            adminKey: "ems6@2026", superKey: "emsw@2026..",
+            firebase: { apiKey: "AIzaSyB_aylTk3hW60y3Kewlbb4B76J3f-lx0qE", authDomain: "ems6-reporting.firebaseapp.com", databaseURL: "https://ems6-reporting-default-rtdb.firebaseio.com", projectId: "ems6-reporting" ,
+            storageBucket: "ems6-reporting.firebasestorage.app",
+            messagingSenderId: "1091962206156",
+            appId: "1:1091962206156:web:0c6c970e222403ab1f8f69",
+            measurementId: "G-JFCVVTHMNR"},
+            telegram: { token: '8340032430:AAHs6z-XPoA4ADGmpAISTSVxkHwsIo-cg0I', chatId: '-5224398844' }
+        };
+
+        firebase.initializeApp(CONFIG.firebase); const db = firebase.database();
+        let userRole = "viewer"; let currentPlatform = ""; let stateData = { deploys: [], stats: {}, filter: "", editor: ""};
+        let boitesConfig = { WEB: 100, SELENIUM: 75, AUTOMAT: 20 };
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('ems6_darkmode', isDark);
+        }
+
+        window.onload = async () => {
+            if(localStorage.getItem('ems6_darkmode') === 'true' || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+            const params = new URLSearchParams(window.location.search);
+            const key = localStorage.getItem('ems6_key');
+            const isViewMode = params.get('mode') === 'view';
+
+            if (isViewMode) {
+                userRole = "viewer";
+                document.body.classList.add('viewer-mode');
+                if(params.get('target') === 'true') { document.body.classList.add('target-only'); }
+                await initApp();
+                const urlPlat = params.get('plat') || 'WEB';
+                selectPlatform(urlPlat);
+                return; 
+            }
+
+            if(key === CONFIG.adminKey || key === CONFIG.superKey) {
+                userRole = (key === CONFIG.superKey) ? "super" : "admin";
+                document.body.classList.add(userRole + '-mode');
+                await initApp();
+                selectPlatform('WEB');
+            } else {
+                document.getElementById('loginOverlay').style.display = 'flex';
+                document.getElementById('appContent').classList.add('hidden');
+            }
+        };
+
+        async function initApp() {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('appContent').classList.remove('hidden');
+            const badge = document.getElementById('roleBadge');
+            badge.innerText = userRole.toUpperCase();
+            
+            if(userRole === 'super') {
+                badge.classList.add('bg-purple-600');
+                document.querySelectorAll('.super-only').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('input[type=number]').forEach(i => i.disabled = false);
+            } else { badge.classList.add(userRole==='admin'?'bg-blue-600':'bg-slate-400'); }
+
+            if(userRole !== 'super') {
+                document.querySelectorAll('.stat-field').forEach(i => i.classList.add('admin-locked'));
+                document.getElementById('rotDetailText').readOnly = true;
+            }
+
+            const confSnap = await db.ref('ems6/config/boites').once('value');
+            if(confSnap.exists()) boitesConfig = confSnap.val();
+            ['WEB','SELENIUM','AUTOMAT'].forEach(p => document.getElementById('conf-'+p).value = boitesConfig[p]);
+        }
+
+        async function selectPlatform(p) {
+            currentPlatform = p;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.querySelectorAll('.plat-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-'+p).classList.add('active');
+
+            const snap = await db.ref(`ems6/plans/${p}/current`).once('value');
+            stateData = snap.val() || { deploys: [], stats: {}, filter: "", editor: ""};
+            if(!stateData.deploys) stateData.deploys = [];
+            if(!stateData.stats) stateData.stats = {};
+            
+            const s = stateData.stats;
+            document.getElementById('statSeeds').value = s.seeds || '';
+            document.getElementById('statRDPs').value = s.rdps || '';
+            document.getElementById('statSessions').value = s.sessions || '';
+			document.getElementById('statProxy').value = s.proxy || 0;
+			document.getElementById('nbrseploysperday').value = s.nbrseploysperday || '';
+			document.getElementById('nbrseedsperhour').value = s.nbrseedsperhour || '';
+			document.getElementById('nbrseedsperday').value = s.nbrseedsperday || '';
+			document.getElementById('nbrlancement').value = s.nbrlancement || '';
+            document.getElementById('rotMin').value = s.rotMin || '';
+            document.getElementById('rotMax').value = s.rotMax || '';
+            document.getElementById('statQuality').value = s.quality || '';
+            document.getElementById('statPaused').value = s.paused || '';
+            document.getElementById('statStart').value = s.start || '';
+            document.getElementById('statEnd').value = s.end || '';
+            document.getElementById('rotDetailText').value = s.rotDetails || '';
+            document.getElementById('filterInput').value = stateData.filter || "";
+            document.getElementById('deployCount').value = (stateData.deploys.length > 0) ? stateData.deploys.length : 8;
+            if(stateData.editor) { document.getElementById('editorSelect').value = stateData.editor; }
+            
+            renderDeploys(stateData.deploys);
+            checkChanges();
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        
+        function renderDeploys(savedDeploys = null) {
+            const num = parseInt(document.getElementById('deployCount').value) || 0;
+            const container = document.getElementById('deploysGrid'); container.innerHTML = "";
+            const total = boitesConfig[currentPlatform] || 100;
+            const base = Math.floor(total / num); const rem = total % num;
+            let dist = [];
+            const isReadonly = (userRole === 'viewer') ? 'disabled' : '';
+
+            for (let i = 0; i < num; i++) {
+                const bCount = base + (i < rem ? 1 : 0); dist.push(bCount);
+                const d = (savedDeploys && savedDeploys[i]) ? savedDeploys[i] : { from: '', id: '', batch: '10/3000P', rules: 'SELECT ALL IPS', ips: '' };
+                const ipCount = d.ips ? d.ips.trim().split(/\r\n|\r|\n/).filter(line => line.trim() !== "").length : 0;
+
+                container.innerHTML += `
+                <div class="deploy-card glass-card p-5 rounded-[2rem] relative">
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-500/10 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-slate-900 text-white text-[12px] font-black px-3 py-1 rounded-full uppercase italic">Deploy ${i+1}</span>
+                            <button onclick="copyIPs(${i}, this)" class="viewer-only-btn hidden bg-blue-600 text-white text-[12px] px-3 py-1 rounded-full font-black uppercase shadow-sm active:scale-95 transition-all">Copy IPs</button>
+                            <span class="ip-count text-[12px] font-black text-blue-600 dark:text-white bg-blue-500/10 dark:bg-white/10 px-3 py-1 rounded-full">${ipCount} IPS</span>
+                        </div>
+                        <span class="text-blue-600 dark:text-white font-black text-[12px] bg-blue-500/10 dark:bg-white/10 px-3 py-1 rounded-full">${bCount} BOITES</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div class="space-y-1">
+                            <label class="block text-[12px] font-black uppercase">From</label>
+                            <input type="text" ${isReadonly} oninput="checkChanges()" class="inp-from w-full p-3 border-none rounded-2xl text-[10px] font-bold uppercase focus:ring-1 focus:ring-blue-400 outline-none" value="${d.from || ''}">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-[12px] font-black uppercase">DEPLOY ID</label>
+                            <input type="text" ${isReadonly} oninput="checkChanges()" class="inp-id w-full p-3 border-none rounded-2xl text-[10px] font-black text-blue-500 bg-blue-500/10 uppercase outline-none" value="${d.id || ''}">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-[12px] font-black uppercase">Batch</label>
+                            <select ${isReadonly} onchange="checkChanges()" class="inp-batch w-full p-3 border-none rounded-2xl text-[9px] font-bold uppercase outline-none">
+                                ${['0/0 P','3/3000 P','5/3000 P','10/3000 P'].map(o => `<option value="${o}" ${d.batch===o?'selected':''}>${o}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-[12px] font-black uppercase">Rules</label>
+                            <select ${isReadonly} onchange="checkChanges()" class="inp-rules w-full p-3 border-none rounded-2xl text-[9px] font-bold uppercase outline-none">
+                                ${['SELECT ALL IPS','SELECT 30 IPS MAX','SELECT 50 IPS MAX','RANDOM ON SELECTED','RANDOM ON SERVER SELECTED','RANDOM ON CLASS','2 IPS RANDOM ON SERVER SELECTED'].map(o => `<option value="${o}" ${d.rules===o?'selected':''}>${o}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="relative mt-2">
+                        <label class="block text-[12px] font-black uppercase italic mb-1.5 px-1">IPS LIST</label>
+                        <textarea id="ips-${i}" ${isReadonly} oninput="updateIPCount(this); checkChanges();" class="inp-ips w-full p-4 bg-slate-900 text-slate-200 border-none rounded-[1.5rem] font-mono text-[10px] uppercase outline-none focus:ring-2 focus:ring-blue-500 transition-all" rows="${userRole==='viewer'?8:2}">${d.ips || ''}</textarea>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('distDisplay').innerText = dist.join(' | ');
+        }
+
+        function updateIPCount(textarea) {
+            const countSpan = textarea.closest('.deploy-card').querySelector('.ip-count');
+            const lines = textarea.value.trim() ? textarea.value.trim().split(/\r\n|\r|\n/).filter(line => line.trim() !== "").length : 0;
+            countSpan.innerText = `${lines} IPS`;
+        }
+
+        function checkChanges() {
+            if(userRole === 'viewer') return;
+            let changed = false;
+            if(document.getElementById('filterInput').value !== (stateData.filter || "")) changed = true;
+            if(parseInt(document.getElementById('deployCount').value) !== (stateData.deploys.length)) changed = true;
+            if(document.getElementById('editorSelect').value !== (stateData.editor || "")) changed = true;
+
+            const s = stateData.stats || {};
+            const currentStats = {
+                seeds: document.getElementById('statSeeds').value, rdps: document.getElementById('statRDPs').value,
+                paused: document.getElementById('statPaused').value, rotDetails: document.getElementById('rotDetailText').value
+            };
+            if(currentStats.seeds !== (s.seeds || "") || currentStats.rdps !== (s.rdps || "") || currentStats.paused !== (s.paused || "") || currentStats.rotDetails !== (s.rotDetails || "")) changed = true;
+
+            if(!changed) {
+                const cards = document.querySelectorAll('.deploy-card');
+                for(let i=0; i<cards.length; i++) {
+                    const o = stateData.deploys[i] || {};
+                    const cur = { from: cards[i].querySelector('.inp-from').value, id: cards[i].querySelector('.inp-id').value, batch: cards[i].querySelector('.inp-batch').value, rules: cards[i].querySelector('.inp-rules').value, ips: cards[i].querySelector('.inp-ips').value };
+                    if(cur.id !== (o.id || "") || cur.from !== (o.from || "") || cur.batch !== (o.batch || "") || cur.rules !== (o.rules || "") || cur.ips !== (o.ips || "")) { changed = true; break; }
+                }
+            }
+            document.getElementById('saveBtn').disabled = !changed;
+        }
+
+        async function saveAll() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            const editorName = document.getElementById('editorSelect').value;
+            const cards = document.querySelectorAll('.deploy-card');
+            const deploys = Array.from(cards).map(c => ({ from: c.querySelector('.inp-from').value.trim(), id: c.querySelector('.inp-id').value.trim(), batch: c.querySelector('.inp-batch').value, rules: c.querySelector('.inp-rules').value, ips: c.querySelector('.inp-ips').value.trim() }));
+            const filter = document.getElementById('filterInput').value.trim();
+            const stats = { seeds: document.getElementById('statSeeds').value, rdps: document.getElementById('statRDPs').value, sessions: document.getElementById('statSessions').value, proxy: document.getElementById('statProxy').value, nbrseploysperday: document.getElementById('nbrseploysperday').value,nbrseedsperhour: document.getElementById('nbrseedsperhour').value,nbrseedsperday: document.getElementById('nbrseedsperday').value,nbrlancement: document.getElementById('nbrlancement').value, rotMin: document.getElementById('rotMin').value, rotMax: document.getElementById('rotMax').value, quality: document.getElementById('statQuality').value, paused: document.getElementById('statPaused').value, start: document.getElementById('statStart').value, end: document.getElementById('statEnd').value, rotDetails: document.getElementById('rotDetailText').value };
+
+            let logChanges = [];
+            if(filter !== (stateData.filter || "")) logChanges.push(`🔍 Keyword: ${filter || 'NONE'}`);
+            deploys.forEach((d, i) => {
+                const o = stateData.deploys[i] || {};
+                let diffs = [];
+                if(d.id !== (o.id || "")) diffs.push("ID");
+                if(d.from !== (o.from || "")) diffs.push("FROM");
+                if(d.ips !== (o.ips || "")) diffs.push("IPs");
+                if(d.batch !== (o.batch || "")) diffs.push("Batch");
+                if(d.rules !== (o.rules || "")) diffs.push("Rules");
+                if(diffs.length > 0) logChanges.push(`📍 D${i+1} (${d.id || 'Empty'}): ${diffs.join(', ')} updated`);
+            });
+
+            await db.ref(`ems6/plans/${currentPlatform}/current`).set({ deploys, filter, stats, editor: editorName, updatedAt: new Date().toLocaleString() });
+
+            if(logChanges.length > 0) {
+                const publicUrl = "https://ems6-plan.pages.dev/";
+                const viewLink = `${publicUrl}?mode=view&plat=${currentPlatform}&target=true`;
+                let changesText = ""; logChanges.forEach(l => { changesText += "• " + l + "\n"; });
+                const telegramMsg = `🚀 <b>UPDATE: #${currentPlatform}</b>\n` + `🖥️ <b>EDIT BY : ${editorName}</b>\n` + `━━━━━━━━━━━━━━━\n` + `📝 <b>CHANGES:</b>\n` + `${changesText}` + `━━━━━━━━━━━━━━━\n` + `🔗 <a href="${viewLink}"><b>VIEW MODIFICATIONS</b></a>`;
+                try { await fetch(`https://api.telegram.org/bot${CONFIG.telegram.token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: CONFIG.telegram.chatId, text: telegramMsg, parse_mode: 'HTML' }) }); } catch (e) { console.error("Telegram Error:", e); }
+            }
+            setTimeout(() => { location.reload(); }, 500);
+        }
+
+        async function superQuickSave() {
+            if(userRole !== 'super') return;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            const editorName = document.getElementById('editorSelect').value;
+            const cards = document.querySelectorAll('.deploy-card');
+            const deploys = Array.from(cards).map(c => ({ from: c.querySelector('.inp-from').value.trim(), id: c.querySelector('.inp-id').value.trim(), batch: c.querySelector('.inp-batch').value, rules: c.querySelector('.inp-rules').value, ips: c.querySelector('.inp-ips').value.trim() }));
+			
+            const stats = { 
+			seeds: document.getElementById('statSeeds').value, 
+			rdps: document.getElementById('statRDPs').value, 
+			sessions: document.getElementById('statSessions').value,
+			proxy: document.getElementById('statProxy').value,
+			nbrseploysperday: document.getElementById('nbrseploysperday').value, // S7I7
+			nbrseedsperhour: document.getElementById('nbrseedsperhour').value,   // S7I7
+			nbrseedsperday: document.getElementById('nbrseedsperday').value,     // S7I7
+			nbrlancement: document.getElementById('nbrlancement').value,         // S7I7
+			rotMin: document.getElementById('rotMin').value, 
+			rotMax: document.getElementById('rotMax').value, 
+			quality: document.getElementById('statQuality').value, 
+			paused: document.getElementById('statPaused').value, 
+			start: document.getElementById('statStart').value, 
+			end: document.getElementById('statEnd').value, 
+			rotDetails: document.getElementById('rotDetailText').value 
+			};
+            await db.ref(`ems6/plans/${currentPlatform}/current`).set({ deploys, filter: document.getElementById('filterInput').value.trim(), stats, editor: editorName, updatedAt: new Date().toLocaleString() });
+            location.reload();
+        }
+
+        async function updateGlobalConfig(plat, val) {
+            if(userRole !== 'super') return;
+            boitesConfig[plat] = parseInt(val) || 0;
+            await db.ref('ems6/config/boites').set(boitesConfig);
+            renderDeploys(stateData.deploys);
+            checkChanges();
+        }
+
+        function openRot() { document.getElementById('rotDetailPanel').style.display = 'block'; }
+        function closeRot() { document.getElementById('rotDetailPanel').style.display = 'none'; }
+        function checkAccess() { const k = document.getElementById('accessKey').value; if(k === CONFIG.adminKey || k === CONFIG.superKey) { localStorage.setItem('ems6_key', k); location.reload(); } }
+        function logout() { localStorage.removeItem('ems6_key'); location.reload(); }
+        
+        function copyIPs(index, btn) {
+            const textarea = document.getElementById(`ips-${index}`);
+            textarea.select();
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "COPIED! ✅";
+                btn.classList.replace('bg-blue-600', 'bg-emerald-500');
+                setTimeout(() => { btn.innerText = originalText; btn.classList.replace('bg-emerald-500', 'bg-blue-600'); }, 2000);
+            });
+        }
+        function copyAllIDs(btn) {
+            const idInputs = document.querySelectorAll('.inp-id');
+            const ids = Array.from(idInputs).map(inp => inp.value.trim()).filter(val => val !== "");
+            navigator.clipboard.writeText(ids.join('\n')).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "DONE! ✅";
+                btn.classList.replace('bg-blue-600', 'bg-emerald-500');
+                setTimeout(() => { btn.innerText = originalText; btn.classList.replace('bg-emerald-500', 'bg-blue-600'); }, 2000);
+            });
+        }
+		
+		
+		// Darori had l-ster bash l-alwan "dark:" ikhdmo
+document.documentElement.classList.toggle('dark');
+
+
+
+
+
+// --- ZID HADA ---
+        
+        // 1. Path EMS6 f Firebase
+        const dataRef = db.ref('ems6/plans');
+
+        // 2. Bach t-7iyd Loading o t-affichi l-data
+        dataRef.on('value', snapshot => {
+            const data = snapshot.val() || {};
+            
+            const platforms = ['WEB', 'SELENIUM', 'AUTOMAT'];
+            
+            platforms.forEach(p => {
+                const current = data[p]?.current || {};
+                const deploys = current.deploys || [];
+                const stats = current.stats || {};
+
+                // A. Update Deploys (30 inputs per platform)
+                for(let i=0; i<30; i++) {
+                    const inp = document.getElementById(`${p}-${i}`);
+                    if(inp) inp.value = deploys[i] || '';
+                }
+
+                // B. Update Stats
+                const fields = ['rdps','sessions','nbrseploysperday','nbrseedsperhour','nbrseedsperday','nbrlancement','proxy','rotMin','quality','paused'];
+                fields.forEach(f => {
+                    const el = document.getElementById(`${p.toLowerCase()}-${f}`);
+                    if(el) el.value = stats[f] || '';
+                });
+
+                // C. ⚠️ HADI HIYA LI KAT-7IYD LOADING
+                const loader = document.getElementById(`${p.toLowerCase()}-loading`);
+                const content = document.getElementById(`${p.toLowerCase()}-content`);
+                
+                if(loader) loader.style.display = 'none';
+                if(content) content.style.display = 'block';
+            });
+        });
+        
+        // --- SALINA L-ZYADA ---
+
+
+
+
+
+
+    </script>
+</body>
+</html>
