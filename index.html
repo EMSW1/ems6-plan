@@ -238,7 +238,8 @@
         .dark .deploy-card { border-left-color: #334155; }
         .dark .deploy-card:hover { border-left-color: #3b82f6; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
 
-        .plat-btn { transition: all 0.2s; border: 2px solid transparent; background: var(--card-bg); color: var(--text-main); position: relative; overflow: hidden; }
+        /* FIXED: Changed overflow to visible so toggle buttons can pop out */
+        .plat-btn { transition: all 0.2s; border: 2px solid transparent; background: var(--card-bg); color: var(--text-main); position: relative; overflow: visible; }
         .plat-btn.active { 
             border-color: #2563eb; 
             background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
