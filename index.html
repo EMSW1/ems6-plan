@@ -279,7 +279,9 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
+        /* --- MODIFICATION HERE: Hide Global Stats in Viewer Mode --- */
         .viewer-mode #statsSection, .viewer-mode #historySection { display: none !important; }
+        .viewer-mode #globalStatsHeader { display: none !important; } /* NEW LINE ADDED */
         .viewer-mode header .admin-only { display: none !important; }
 
         .target-only .plat-btn:not(.active) { display: none !important; }
