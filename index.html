@@ -1036,7 +1036,7 @@
                 const publicUrl = "https://ems6-plan.pages.dev/";
                 const viewLink = `${publicUrl}?mode=view&plat=${currentPlatform}&target=true`;
                 let changesText = ""; logChanges.forEach(l => { changesText += "• " + l + "\n"; });
-                const telegramMsg = `🔄 <b>UPDATE: #${currentPlatform}</b>\n` + `🖌 <b>EDIT BY : ${editorName}</b>\n` + `━━━━━━━━━━━━━━━\n` + `📝 <b>CHANGES:</b>\n` + `${changesText}` + `━━━━━━━━━━━━━━━\n` + `🔗 <a href="${viewLink}"><b>VIEW MODIFICATIONS</b></a>`;
+                const telegramMsg = `🔄 <b>UPDATE: #${currentPlatform}</b>\n` + `👤 <b>BY : ${editorName}</b>\n` + `━━━━━━━━━━━━━━━\n` + `📝 <b>CHANGES:</b>\n` + `${changesText}` + `━━━━━━━━━━━━━━━\n` + `🔗 <a href="${viewLink}"><b>VIEW MODIFICATIONS</b></a>`;
                 try { await fetch(`https://api.telegram.org/bot${CONFIG.telegram.token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: CONFIG.telegram.chatId, text: telegramMsg, parse_mode: 'HTML' }) }); } catch (e) { console.error("Telegram Error:", e); }
             }
             
@@ -1140,3 +1140,4 @@
     </script>
 </body>
 </html>
+
