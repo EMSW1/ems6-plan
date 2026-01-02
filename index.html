@@ -142,6 +142,23 @@
         }
         .platform-disabled { display: none !important; }
         .super-mode .platform-disabled { display: flex !important; opacity: 0.5; filter: grayscale(1); }
+
+        /* --- NEW: VIEWER MODE STRICT RULES --- */
+        .viewer-mode .plat-btn, 
+        .viewer-mode .sub-plat-btn,
+        .viewer-mode #seleniumSubMenu { 
+            display: none !important; /* Hide Navigation Buttons */
+        }
+        
+        /* Make sure Viewer has NO interaction except copy buttons */
+        .viewer-mode .deploy-card { pointer-events: none; }
+        .viewer-mode .viewer-only-btn { 
+            pointer-events: auto !important; 
+            cursor: pointer !important; 
+            z-index: 50; 
+            position: relative;
+        }
+        .viewer-mode #appContent { margin-top: 2rem; }
     </style>
 </head>
 <body class="p-4 md:p-8">
