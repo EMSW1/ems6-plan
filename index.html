@@ -10,95 +10,136 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --card-bg: rgba(255, 255, 255, 0.85);
+            /* Modified for better contrast with new background */
+            --card-bg: rgba(255, 255, 255, 0.65); 
             --text-main: #1e293b;
-            --border-color: rgba(255, 255, 255, 0.4);
-            --input-bg: #f8fafc;
-            --label-color: #64748b;
+            --border-color: rgba(255, 255, 255, 0.6);
+            --input-bg: rgba(248, 250, 252, 0.8);
+            --label-color: #475569;
         }
 
         .dark {
-            --card-bg: rgba(15, 23, 42, 0.75);
+            /* More transparent in dark mode to show the glowing background */
+            --card-bg: rgba(15, 23, 42, 0.60); 
             --text-main: #f8fafc;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --input-bg: rgba(30, 41, 59, 0.5);
+            --border-color: rgba(255, 255, 255, 0.15);
+            --input-bg: rgba(30, 41, 59, 0.4);
             --label-color: #cbd5e1;
         }
 
-        /* --- NEW BACKGROUND ANIMATION (Galaxy/Stars) --- */
+        /* --- NEW PROFESSIONAL BACKGROUND ANIMATION --- */
         body { 
             font-family: 'Inter', sans-serif; 
-            background: linear-gradient(-45deg, #0b0f19, #16213e, #1a1a2e, #240046);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            background-color: #020617; /* Very dark slate base */
             color: var(--text-main); 
             transition: all 0.3s ease; 
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
+            margin: 0;
         }
 
-        /* Stars Effect */
+        /* Container for the background effects */
+        .animated-bg-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -10;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        /* Glowing Orbs */
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: floatOrb 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .orb-1 {
+            top: -10%; left: -10%; width: 50vw; height: 50vw;
+            background: radial-gradient(circle, #4f46e5 0%, transparent 70%); /* Indigo */
+            animation-duration: 25s;
+        }
+        .orb-2 {
+            bottom: -10%; right: -10%; width: 60vw; height: 60vw;
+            background: radial-gradient(circle, #9333ea 0%, transparent 70%); /* Purple */
+            animation-delay: -5s;
+            animation-duration: 30s;
+        }
+        .orb-3 {
+            top: 40%; left: 40%; width: 40vw; height: 40vw;
+            background: radial-gradient(circle, #0ea5e9 0%, transparent 70%); /* Sky Blue */
+            animation-delay: -10s;
+            animation-duration: 22s;
+            opacity: 0.3;
+        }
+
+        /* Tech Grid Overlay */
+        .bg-grid {
+            position: absolute; top: 0; left: 0; width: 200%; height: 200%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+            animation: gridMove 20s linear infinite;
+            opacity: 0.4;
+        }
+
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(100px, 50px) scale(1.1); }
+        }
+
+        @keyframes gridMove {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(50px) translateZ(-200px); }
+        }
+
+        /* Keep existing Stars logic but make them subtler */
         body::before, body::after {
             content: "";
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
-            z-index: -1;
+            z-index: -9; /* Above orbs, below content */
         }
-        
         body::before {
             background-image: radial-gradient(white 1px, transparent 1px);
             background-size: 50px 50px;
-            opacity: 0.1;
+            opacity: 0.2; /* Increased slightly */
             animation: starsMove 100s linear infinite;
-        }
-        
-        body::after {
-            background-image: radial-gradient(white 2px, transparent 2px);
-            background-size: 120px 120px;
-            opacity: 0.15;
-            animation: starsMove 150s linear infinite reverse;
-        }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        @keyframes starsMove {
-            from { transform: translateY(0); }
-            to { transform: translateY(-1000px); }
         }
         
         .glass-card { 
             background: var(--card-bg); 
-            backdrop-filter: blur(10px); 
+            backdrop-filter: blur(16px); /* Stronger blur for glass effect */
             border: 1px solid var(--border-color);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
         }
 
-        label { color: var(--label-color) !important; }
-        select, input, textarea { color: var(--text-main) !important; background-color: var(--input-bg) !important; }
+        label { color: var(--label-color) !important; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        select, input, textarea { color: var(--text-main) !important; background-color: var(--input-bg) !important; border: 1px solid rgba(255,255,255,0.1); }
         
         select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1rem; padding-right: 2rem; }
 
         .deploy-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 6px solid #e2e8f0; }
-        .deploy-card:hover { transform: translateY(-2px); border-left-color: #2563eb; }
+        .deploy-card:hover { transform: translateY(-5px) scale(1.01); border-left-color: #2563eb; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
 
         .dark .deploy-card { border-left-color: #334155; }
         .dark .deploy-card:hover { border-left-color: #3b82f6; }
 
-        .plat-btn { transition: all 0.2s; border: 2px solid transparent; background: var(--card-bg); color: var(--text-main); position: relative; }
+        .plat-btn { transition: all 0.2s; border: 2px solid transparent; background: var(--card-bg); color: var(--text-main); position: relative; overflow: hidden; }
         .plat-btn.active { 
             border-color: #2563eb; 
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.8) 0%, rgba(29, 78, 216, 0.8) 100%);
             color: white !important;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
         }
         
-        .sub-plat-btn { transition: all 0.2s; border: 2px solid transparent; background: rgba(255,255,255,0.1); color: var(--text-main); position: relative; }
+        .sub-plat-btn { transition: all 0.2s; border: 2px solid transparent; background: rgba(255,255,255,0.05); color: var(--text-main); position: relative; }
         .sub-plat-btn.active { 
             border-color: #f59e0b; 
             background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
@@ -106,18 +147,15 @@
         }
 
         #loadingOverlay, #loginOverlay { 
-            background: var(--bg-body); 
-            backdrop-filter: blur(8px);
+            background: rgba(2, 6, 23, 0.8); 
+            backdrop-filter: blur(12px);
             position: fixed; inset: 0; z-index: 200; 
             align-items: center; justify-content: center; display: flex; flex-direction: column; 
         }
 
         .viewer-mode .admin-only, .viewer-mode .super-only { display: none !important; }
         .admin-mode .super-only { display: none !important; }
-        /* Modif: Admin locked from editing global stats too */
         .admin-locked { pointer-events: none; opacity: 0.8; }
-        
-        /* New class for Global Stats - locked for everyone except Super */
         .super-locked { pointer-events: none; opacity: 0.9; border: 1px dashed rgba(128,128,128,0.3) !important; }
         .super-mode .super-locked { pointer-events: auto; opacity: 1; border: none !important; }
 
@@ -139,7 +177,7 @@
             border: none !important; background: transparent !important;
             pointer-events: none !important; color: var(--text-main) !important; padding-left: 0 !important;
         }
-        .viewer-mode .inp-id { color: #3b82f6 !important; font-weight: 900; }
+        .viewer-mode .inp-id { color: #3b82f6 !important; font-weight: 900; text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
         .viewer-only-btn { display: none !important; }
         .viewer-mode .viewer-only-btn { display: flex !important; }
 
@@ -171,180 +209,190 @@
         .viewer-mode #viewerPlatformLabel { 
             display: block !important; text-align: center; font-size: 2.5rem; font-weight: 900;
             text-transform: uppercase; font-style: italic; margin-bottom: 1.5rem;
-            color: var(--text-main); text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+            color: var(--text-main); text-shadow: 0 0 20px rgba(255,255,255,0.3);
         }
         
-        /* NEW: Global Stats Bar Style */
         .global-stat-box {
             text-align: center;
             padding: 0.5rem;
             border-right: 1px solid rgba(128,128,128,0.1);
         }
         .global-stat-box:last-child { border-right: none; }
-        .global-stat-label { font-size: 10px; font-weight: 900; opacity: 0.7; text-transform: uppercase; margin-bottom: 4px; }
-        .global-stat-val { font-size: 1.2rem; font-weight: 900; width: 100%; text-align: center; background: transparent; border: none; outline: none; }
+        .global-stat-label { font-size: 10px; font-weight: 900; opacity: 0.8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 1px; }
+        .global-stat-val { font-size: 1.2rem; font-weight: 900; width: 100%; text-align: center; background: transparent; border: none; outline: none; text-shadow: 0 0 10px currentColor; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
+    <div class="animated-bg-container">
+        <div class="bg-orb orb-1"></div>
+        <div class="bg-orb orb-2"></div>
+        <div class="bg-orb orb-3"></div>
+        <div class="bg-grid"></div>
+    </div>
+
     <div id="loginOverlay">
-        <div class="glass-card p-10 rounded-[2.5rem] w-full max-w-sm text-center border">
-            <div class="w-20 h-20 bg-blue-600 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-xl">
-                <span class="text-white text-3xl font-black italic">W</span>
+        <div class="glass-card p-10 rounded-[2.5rem] w-full max-w-sm text-center border shadow-2xl relative overflow-hidden">
+            <div class="absolute inset-0 bg-blue-500/10 blur-xl"></div>
+            <div class="relative z-10">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-xl ring-4 ring-blue-500/20">
+                    <span class="text-white text-3xl font-black italic">W</span>
+                </div>
+                <h2 class="text-3xl font-black mb-2 uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">EMS6 ACCESS</h2>
+                <input type="password" id="accessKey" onkeypress="if(event.key==='Enter') checkAccess()" placeholder="••••••••" class="w-full p-4 border-none rounded-2xl mb-4 text-center font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-slate-900/50 text-white placeholder-slate-500">
+                <button onclick="checkAccess()" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white p-4 rounded-2xl font-black uppercase shadow-lg transform hover:scale-105 transition-all">Unlock</button>
             </div>
-            <h2 class="text-3xl font-black mb-2 uppercase tracking-tighter">EMS6 ACCESS</h2>
-            <input type="password" id="accessKey" onkeypress="if(event.key==='Enter') checkAccess()" placeholder="••••••••" class="w-full p-4 border-none rounded-2xl mb-4 text-center font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-            <button onclick="checkAccess()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black uppercase shadow-lg">Unlock</button>
         </div>
     </div>
 
     <div id="rotDetailPanel" class="glass-card p-8 rounded-[2rem] border-t-8 border-blue-600">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-xl font-black uppercase italic">Rotation Details</h3>
-            <button onclick="closeRot()" class="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-full">✕</button>
+            <button onclick="closeRot()" class="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-full hover:bg-red-500 hover:text-white transition-all">✕</button>
         </div>
         <textarea id="rotDetailText" oninput="checkChanges()" class="w-full h-72 p-4 border-none rounded-2xl font-mono text-xs uppercase outline-none focus:ring-2 focus:ring-blue-400 transition-all"></textarea>
-        <button onclick="closeRot()" class="w-full mt-6 bg-blue-600 text-white py-4 rounded-2xl font-black uppercase">CLOSE</button>
+        <button onclick="closeRot()" class="w-full mt-6 bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg hover:shadow-blue-500/30">CLOSE</button>
     </div>
 
-    <div id="loadingOverlay" style="display:none;"><div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600"></div></div>
+    <div id="loadingOverlay" style="display:none;"><div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 shadow-lg shadow-blue-500/50"></div></div>
 
     <div id="appContent" class="hidden max-w-6xl mx-auto space-y-6">
-        <header class="glass-card p-6 rounded-[2rem] flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-black italic uppercase tracking-tighter">EMS6 <span class="text-blue-600">PLAN</span></h1>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">REPORTING</p>
+        <header class="glass-card p-6 rounded-[2rem] flex justify-between items-center relative overflow-hidden group">
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div class="relative z-10">
+                <h1 class="text-2xl font-black italic uppercase tracking-tighter drop-shadow-lg">EMS6 <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600">PLAN</span></h1>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">REPORTING SYSTEM</p>
             </div>
-            <div class="flex items-center gap-3">
-                <button id="darkToggle" onclick="toggleDarkMode()" class="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl hover:scale-110 transition-all">
+            <div class="flex items-center gap-3 relative z-10">
+                <button id="darkToggle" onclick="toggleDarkMode()" class="p-2.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl hover:scale-110 transition-all shadow-md">
                     <span class="dark:hidden text-lg">🌙</span><span class="hidden dark:inline text-lg">☀️</span>
                 </button>
-                <span id="roleBadge" class="text-[9px] font-black px-4 py-1.5 rounded-full uppercase text-white">---</span>
-                <button onclick="logout()" class="admin-only p-2.5 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-xl">
+                <span id="roleBadge" class="text-[9px] font-black px-4 py-1.5 rounded-full uppercase text-white shadow-lg shadow-blue-500/20">---</span>
+                <button onclick="logout()" class="admin-only p-2.5 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 </button>
             </div>
         </header>
 
-        <div id="globalStatsHeader" class="glass-card p-4 rounded-[2rem] grid grid-cols-2 md:grid-cols-5 gap-4 items-center animate-fade-in-down border-t-4 border-purple-500">
-            <div class="global-stat-box">
-                <div class="global-stat-label text-blue-500">TOTAL RDPs</div>
-                <input type="text" id="glb_rdps" oninput="checkChanges()" class="global-stat-val text-blue-600 super-locked" placeholder="-">
+        <div id="globalStatsHeader" class="glass-card p-4 rounded-[2rem] grid grid-cols-2 md:grid-cols-5 gap-4 items-center animate-fade-in-down border-t-4 border-purple-500 shadow-lg shadow-purple-500/10">
+            <div class="global-stat-box hover:bg-white/5 transition-colors rounded-xl">
+                <div class="global-stat-label text-blue-400">TOTAL RDPs</div>
+                <input type="text" id="glb_rdps" oninput="checkChanges()" class="global-stat-val text-blue-500 super-locked" placeholder="-">
             </div>
-            <div class="global-stat-box">
-                <div class="global-stat-label text-emerald-500">TOTAL SEEDS</div>
-                <input type="text" id="glb_seeds" oninput="checkChanges()" class="global-stat-val text-emerald-600 super-locked" placeholder="-">
+            <div class="global-stat-box hover:bg-white/5 transition-colors rounded-xl">
+                <div class="global-stat-label text-emerald-400">TOTAL SEEDS</div>
+                <input type="text" id="glb_seeds" oninput="checkChanges()" class="global-stat-val text-emerald-500 super-locked" placeholder="-">
             </div>
-            <div class="global-stat-box">
-                <div class="global-stat-label text-purple-500">QUALITÉ EN COURS</div>
-                <input type="text" id="glb_qual" oninput="checkChanges()" class="global-stat-val text-purple-600 super-locked" placeholder="-">
+            <div class="global-stat-box hover:bg-white/5 transition-colors rounded-xl">
+                <div class="global-stat-label text-purple-400">QUALITÉ EN COURS</div>
+                <input type="text" id="glb_qual" oninput="checkChanges()" class="global-stat-val text-purple-500 super-locked" placeholder="-">
             </div>
-            <div class="global-stat-box">
-                <div class="global-stat-label text-rose-500">PAUSED EN COURS</div>
-                <input type="text" id="glb_pause" oninput="checkChanges()" class="global-stat-val text-rose-600 super-locked" placeholder="-">
+            <div class="global-stat-box hover:bg-white/5 transition-colors rounded-xl">
+                <div class="global-stat-label text-rose-400">PAUSED EN COURS</div>
+                <input type="text" id="glb_pause" oninput="checkChanges()" class="global-stat-val text-rose-500 super-locked" placeholder="-">
             </div>
-            <div class="global-stat-box">
-                <div class="global-stat-label text-orange-500">TOTAL PROXY</div>
-                <input type="text" id="glb_proxy" oninput="checkChanges()" class="global-stat-val text-orange-600 super-locked" placeholder="-">
+            <div class="global-stat-box hover:bg-white/5 transition-colors rounded-xl">
+                <div class="global-stat-label text-orange-400">TOTAL PROXY</div>
+                <input type="text" id="glb_proxy" oninput="checkChanges()" class="global-stat-val text-orange-500 super-locked" placeholder="-">
             </div>
         </div>
 
         <h2 id="viewerPlatformLabel">---</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button onclick="selectPlatform('WEB')" id="btn-WEB" class="plat-btn glass-card p-6 rounded-3xl font-black uppercase flex justify-between items-center group">
+            <button onclick="selectPlatform('WEB')" id="btn-WEB" class="plat-btn glass-card p-6 rounded-3xl font-black uppercase flex justify-between items-center group hover:scale-[1.02] active:scale-95">
                 <div class="super-only plat-status-toggle" onclick="togglePlatVisibility('WEB', event)" title="Toggle Visibility"></div>
-                <span class="text-lg italic">WEB</span>
-                <input type="number" id="conf-WEB" class="w-12 h-8 text-center rounded-lg text-xs" onchange="updateGlobalConfig('WEB', this.value)" onclick="event.stopPropagation()" disabled>
+                <span class="text-lg italic group-hover:text-blue-400 transition-colors">WEB</span>
+                <input type="number" id="conf-WEB" class="w-12 h-8 text-center rounded-lg text-xs font-bold" onchange="updateGlobalConfig('WEB', this.value)" onclick="event.stopPropagation()" disabled>
             </button>
             
-            <button onclick="selectPlatform('SELENIUM')" id="btn-SELENIUM" class="plat-btn glass-card p-6 rounded-3xl font-black uppercase flex justify-between items-center group">
+            <button onclick="selectPlatform('SELENIUM')" id="btn-SELENIUM" class="plat-btn glass-card p-6 rounded-3xl font-black uppercase flex justify-between items-center group hover:scale-[1.02] active:scale-95">
                 <div class="super-only plat-status-toggle" onclick="togglePlatVisibility('SELENIUM', event)" title="Toggle Visibility"></div>
-                <span class="text-lg italic">SELENIUM</span>
+                <span class="text-lg italic group-hover:text-blue-400 transition-colors">SELENIUM</span>
                 <input type="number" id="conf-SELENIUM" class="w-12 h-8 text-center rounded-lg text-xs font-black bg-blue-100 dark:bg-blue-900/30 text-blue-600" onclick="event.stopPropagation()" disabled readonly>
             </button>
 
-            <button onclick="selectPlatform('AUTOMAT')" id="btn-AUTOMAT" class="plat-btn glass-card p-6 rounded-3xl font-black uppercase flex justify-between items-center group">
+            <button onclick="selectPlatform('AUTOMAT')" id="btn-AUTOMAT" class="plat-btn glass-card p-6 rounded-3xl font-black uppercase flex justify-between items-center group hover:scale-[1.02] active:scale-95">
                 <div class="super-only plat-status-toggle" onclick="togglePlatVisibility('AUTOMAT', event)" title="Toggle Visibility"></div>
-                <span class="text-lg italic">AUTOMAT</span>
-                <input type="number" id="conf-AUTOMAT" class="w-12 h-8 text-center rounded-lg text-xs" onchange="updateGlobalConfig('AUTOMAT', this.value)" onclick="event.stopPropagation()" disabled>
+                <span class="text-lg italic group-hover:text-blue-400 transition-colors">AUTOMAT</span>
+                <input type="number" id="conf-AUTOMAT" class="w-12 h-8 text-center rounded-lg text-xs font-bold" onchange="updateGlobalConfig('AUTOMAT', this.value)" onclick="event.stopPropagation()" disabled>
             </button>
         </div>
 
         <div id="seleniumSubMenu" class="hidden grid grid-cols-2 gap-4 md:w-2/3 mx-auto animate-fade-in-down">
-            <button onclick="selectPlatform('SELENIUM_CHROME')" id="btn-SELENIUM_CHROME" class="sub-plat-btn glass-card p-4 rounded-3xl font-black uppercase flex justify-between items-center hover:bg-orange-500/10">
+            <button onclick="selectPlatform('SELENIUM_CHROME')" id="btn-SELENIUM_CHROME" class="sub-plat-btn glass-card p-4 rounded-3xl font-black uppercase flex justify-between items-center hover:bg-orange-500/10 hover:border-orange-500/30">
                 <div class="super-only plat-status-toggle" onclick="togglePlatVisibility('SELENIUM_CHROME', event)" title="Toggle Visibility"></div>
                 <span class="text-sm italic">🔸 CHROME</span>
                 <input type="number" id="conf-SELENIUM_CHROME" class="w-12 h-8 text-center rounded-lg text-xs bg-white/50" onchange="updateGlobalConfig('SELENIUM_CHROME', this.value)" onclick="event.stopPropagation()" disabled>
             </button>
-            <button onclick="selectPlatform('SELENIUM_BRAVE')" id="btn-SELENIUM_BRAVE" class="sub-plat-btn glass-card p-4 rounded-3xl font-black uppercase flex justify-between items-center hover:bg-orange-500/10">
+            <button onclick="selectPlatform('SELENIUM_BRAVE')" id="btn-SELENIUM_BRAVE" class="sub-plat-btn glass-card p-4 rounded-3xl font-black uppercase flex justify-between items-center hover:bg-orange-500/10 hover:border-orange-500/30">
                 <div class="super-only plat-status-toggle" onclick="togglePlatVisibility('SELENIUM_BRAVE', event)" title="Toggle Visibility"></div>
                 <span class="text-sm italic">🦁 BRAVE</span>
                 <input type="number" id="conf-SELENIUM_BRAVE" class="w-12 h-8 text-center rounded-lg text-xs bg-white/50" onchange="updateGlobalConfig('SELENIUM_BRAVE', this.value)" onclick="event.stopPropagation()" disabled>
             </button>
         </div>
 
-        <div id="statsSection" class="content-hidden glass-card p-4 rounded-[2rem] grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-            <div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
-                <label class="block text-[12px] font-black uppercase text-center mb-1">Seeds</label>
+        <div id="statsSection" class="content-hidden glass-card p-4 rounded-[2rem] grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 shadow-lg">
+            <div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 hover:bg-blue-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase text-center mb-1 text-blue-300">Seeds</label>
                 <input type="text" id="statSeeds" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
             </div>
-            <div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
-                <label class="block text-[12px] font-black uppercase text-center mb-1">RDPs</label>
+            <div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 hover:bg-blue-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase text-center mb-1 text-blue-300">RDPs</label>
                 <input type="text" id="statRDPs" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
             </div>
-			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
-                <label class="block text-[12px] font-black uppercase text-center mb-1">Sessions</label>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 hover:bg-blue-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase text-center mb-1 text-blue-300">Sessions</label>
                 <input type="text" id="statSessions" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
             </div>
-			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
-                <label class="block text-[12px] font-black uppercase text-center mb-1">NBR-DEPLOYS/day</label>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 hover:bg-blue-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase text-center mb-1 text-blue-300">DEPLOYS/day</label>
                 <input type="text" id="nbrseploysperday" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
             </div>
-			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
-                <label class="block text-[12px] font-black uppercase text-center mb-1">NBR-SEEDS/h</label>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 hover:bg-blue-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase text-center mb-1 text-blue-300">SEEDS/h</label>
                 <input type="text" id="nbrseedsperhour" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
             </div>
-			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
-                <label class="block text-[12px] font-black uppercase text-center mb-1">NBR-SEEDS/day</label>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 hover:bg-blue-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase text-center mb-1 text-blue-300">SEEDS/day</label>
                 <input type="text" id="nbrseedsperday" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
             </div>
-			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10">
-                <label class="block text-[12px] font-black uppercase text-center mb-1">NBR-LANCEMENT</label>
+			<div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 hover:bg-blue-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase text-center mb-1 text-blue-300">LANCEMENT</label>
                 <input type="text" id="nbrlancement" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
             </div>
-            <div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 text-center">
-                <label class="block text-[12px] font-black uppercase mb-1">Rotation</label>
+            <div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10 text-center hover:bg-blue-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase mb-1 text-blue-300">Rotation</label>
                 <div class="flex justify-center items-center gap-0.5 font-black text-blue-500 text-xs mb-1">
                     <input type="number" id="rotMin" oninput="checkChanges()" class="stat-field w-8 bg-transparent text-center outline-none italic"> / <input type="number" id="rotMax" oninput="checkChanges()" class="stat-field w-8 bg-transparent text-center outline-none italic">
                 </div>
-                <button onclick="openRot()" class="bg-blue-600 text-white text-[8px] px-3 py-1 rounded-full font-black uppercase">Details</button>
+                <button onclick="openRot()" class="bg-blue-600 hover:bg-blue-500 text-white text-[8px] px-3 py-1 rounded-full font-black uppercase shadow-md transition-all">Details</button>
             </div>
             
-            <div class="p-3 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 text-center">
-                <label class="block text-[12px] font-black uppercase mb-1">Quality</label>
+            <div class="p-3 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 text-center hover:bg-emerald-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase mb-1 text-emerald-300">Quality</label>
                 <input type="text" id="statQuality" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-emerald-500 text-center outline-none text-sm uppercase">
             </div>
-            <div class="p-3 bg-rose-500/5 rounded-2xl border border-rose-500/10 text-center">
-                <label class="block text-[12px] font-black uppercase mb-1">Paused</label>
+            <div class="p-3 bg-rose-500/5 rounded-2xl border border-rose-500/10 text-center hover:bg-rose-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase mb-1 text-rose-300">Paused</label>
                 <input type="text" id="statPaused" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-rose-500 text-center outline-none text-sm uppercase">
             </div>
-            <div class="p-3 bg-orange-500/5 rounded-2xl border border-orange-500/10 text-center">
-                <label class="block text-[12px] font-black uppercase mb-1">Period</label>
+            <div class="p-3 bg-orange-500/5 rounded-2xl border border-orange-500/10 text-center hover:bg-orange-500/10 transition-colors">
+                <label class="block text-[10px] font-black uppercase mb-1 text-orange-300">Period</label>
                 <div class="flex gap-1"><input type="text" id="statStart" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-orange-500 text-[10px] text-center outline-none uppercase" placeholder="S"><input type="text" id="statEnd" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-orange-500 text-[10px] text-center outline-none uppercase" placeholder="E"></div>
             </div>
             <div class="p-3 bg-blue-500/5 rounded-2xl border border-blue-500/10" style="display:none !important;">
-                <label class="block text-[12px] font-black uppercase text-center mb-1">Proxy</label>
+                <label class="block text-[10px] font-black uppercase text-center mb-1 text-blue-300">Proxy</label>
                 <input type="text" id="statProxy" oninput="checkChanges()" class="stat-field w-full bg-transparent font-black text-blue-500 outline-none text-center text-sm uppercase">
             </div>
         </div>
 
         <div id="mainContainer" class="content-hidden space-y-6">
-            <div class="glass-card p-6 rounded-[2rem] grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div class="glass-card p-6 rounded-[2rem] grid grid-cols-1 md:grid-cols-2 gap-8 items-center shadow-lg">
                 <div class="flex gap-4 items-center">
                     <div class="admin-only w-1/3">
-                        <label class="block text-[12px] font-black uppercase mb-2 italic">EDITOR</label>
-                        <select id="editorSelect" onchange="checkChanges()" class="w-full p-3 border-none rounded-2xl font-black text-[10px] outline-none">
+                        <label class="block text-[12px] font-black uppercase mb-2 italic text-blue-300">EDITOR</label>
+                        <select id="editorSelect" onchange="checkChanges()" class="w-full p-3 border-none rounded-2xl font-black text-[10px] outline-none hover:bg-white/10 transition-colors cursor-pointer">
                             <option value="MOHAMED IAROCHENE">MOHAMED IAROCHENE</option>
                             <option value="MEHDI AOURACHE">MEHDI AOURACHE</option>
                             <option value="ALLAL GASMI">ALLAL GASMI</option>
@@ -353,29 +401,30 @@
                         </select>
                     </div>
                     <div class="admin-only w-1/4">
-                        <label class="block text-[12px] font-black uppercase mb-2">NBR-DEPLOYS</label>
-                        <input type="number" id="deployCount" oninput="renderDeploys(); checkChanges();" class="w-full p-3 rounded-2xl font-black text-blue-600 text-center border-none">
+                        <label class="block text-[12px] font-black uppercase mb-2 text-blue-300">DEPLOYS</label>
+                        <input type="number" id="deployCount" oninput="renderDeploys(); checkChanges();" class="w-full p-3 rounded-2xl font-black text-blue-500 text-center border-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="flex-1">
                         <label class="block text-[12px] font-black text-blue-500 uppercase mb-2 italic">KEYWORD FILTER</label>
                         <div class="flex gap-2">
-                            <input type="text" id="filterInput" oninput="checkChanges()" class="w-full p-3 border-2 border-blue-500/30 rounded-2xl font-black text-blue-600 bg-blue-500/5 text-center uppercase focus:border-blue-500 outline-none">
+                            <input type="text" id="filterInput" oninput="checkChanges()" class="w-full p-3 border-2 border-blue-500/30 rounded-2xl font-black text-blue-600 bg-blue-500/5 text-center uppercase focus:border-blue-500 outline-none placeholder-blue-500/30" placeholder="SEARCH...">
                             <button onclick="copyAllIDs(this)" class="viewer-only-btn hidden bg-blue-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Copy IDs</button>
                         </div>
                     </div>
                 </div>
-                <div class="text-center bg-slate-500/5 p-4 rounded-[1.5rem] border border-dashed border-slate-300">
-                    <p class="text-[12px] font-black uppercase mb-1">DIVISION SEEDS BY DEPLOYS</p>
-                    <div id="distDisplay" class="font-black text-xs italic tracking-tighter">---</div>
+                <div class="text-center bg-slate-500/5 p-4 rounded-[1.5rem] border border-dashed border-slate-500/30">
+                    <p class="text-[12px] font-black uppercase mb-1 text-slate-400">DIVISION SEEDS BY DEPLOYS</p>
+                    <div id="distDisplay" class="font-black text-xs italic tracking-tighter text-slate-300">---</div>
                 </div>
             </div>
 
             <div id="deploysGrid" class="space-y-4 pb-20"></div>
 
-            <div class="admin-only fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 flex gap-3 z-50">
-                <button id="saveBtn" disabled onclick="saveAll()" class="w-full text-white py-6 rounded-[2rem] font-black text-xl shadow-2xl uppercase italic border-b-4 border-blue-900 flex items-center justify-center gap-3 active:scale-95">Save Changes</button>
-                <button id="superSaveBtn" onclick="superQuickSave()" class="super-only hidden bg-purple-600 hover:bg-purple-700 text-white px-10 py-6 rounded-[2rem] font-black text-xs shadow-2xl border-b-4 border-purple-900 uppercase italic active:scale-95">⚡ Edit Only</button>
-            </div>
+        </div>
+        
+        <div id="actionToolbar" class="admin-only hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 flex gap-3 z-50">
+            <button id="saveBtn" disabled onclick="saveAll()" class="w-full text-white py-6 rounded-[2rem] font-black text-xl shadow-2xl uppercase italic border-b-4 border-blue-900 flex items-center justify-center gap-3 active:scale-95 backdrop-blur-md">Save Changes</button>
+            <button id="superSaveBtn" onclick="superQuickSave()" class="super-only hidden bg-purple-600 hover:bg-purple-700 text-white px-10 py-6 rounded-[2rem] font-black text-xs shadow-2xl border-b-4 border-purple-900 uppercase italic active:scale-95 backdrop-blur-md">⚡ Edit Only</button>
         </div>
     </div>
 
@@ -412,9 +461,14 @@
         }
 
         window.onload = async () => {
+            // Apply dark mode immediately based on preference or local storage
             if(localStorage.getItem('ems6_darkmode') === 'true' || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
+            } else {
+                // Default to dark mode if not specified, as per space theme
+                 document.documentElement.classList.add('dark');
             }
+            
             const params = new URLSearchParams(window.location.search);
             const key = localStorage.getItem('ems6_key');
             const isViewMode = params.get('mode') === 'view';
@@ -565,6 +619,7 @@
                     document.getElementById('statsSection').classList.add('content-hidden');
                     document.getElementById('mainContainer').classList.add('content-hidden');
                     currentPlatform = "";
+                    checkChanges(); // Update toolbar visibility
                 }
                 return;
             }
@@ -591,6 +646,7 @@
                 const btn = document.getElementById('btn-'+p);
                 if(btn) btn.classList.remove('active');
                 currentPlatform = "";
+                checkChanges(); // Update toolbar visibility
                 return;
             }
 
@@ -653,37 +709,37 @@
                 <div class="deploy-card glass-card p-5 rounded-[2rem] relative">
                     <div class="flex justify-between items-center mb-4 border-b border-slate-500/10 pb-3">
                         <div class="flex items-center gap-2">
-                            <span class="bg-slate-900 text-white text-[12px] font-black px-3 py-1 rounded-full uppercase italic">Deploy ${i+1}</span>
-                            <button onclick="copyIPs(${i}, this)" class="viewer-only-btn hidden bg-blue-600 text-white text-[12px] px-3 py-1 rounded-full font-black uppercase shadow-sm active:scale-95 transition-all">Copy IPs</button>
-                            <span class="ip-count text-[12px] font-black text-blue-600 dark:text-white bg-blue-500/10 dark:bg-white/10 px-3 py-1 rounded-full">${ipCount} IPS</span>
+                            <span class="bg-slate-900 text-white text-[12px] font-black px-3 py-1 rounded-full uppercase italic shadow-md">Deploy ${i+1}</span>
+                            <button onclick="copyIPs(${i}, this)" class="viewer-only-btn hidden bg-blue-600 text-white text-[12px] px-3 py-1 rounded-full font-black uppercase shadow-sm active:scale-95 transition-all hover:bg-blue-500">Copy IPs</button>
+                            <span class="ip-count text-[12px] font-black text-blue-600 dark:text-blue-300 bg-blue-500/10 dark:bg-blue-900/30 px-3 py-1 rounded-full border border-blue-500/20">${ipCount} IPS</span>
                         </div>
-                        <span class="text-blue-600 dark:text-white font-black text-[12px] bg-blue-500/10 dark:bg-white/10 px-3 py-1 rounded-full">${bCount} BOITES</span>
+                        <span class="text-blue-600 dark:text-blue-300 font-black text-[12px] bg-blue-500/10 dark:bg-blue-900/30 px-3 py-1 rounded-full border border-blue-500/20">${bCount} BOITES</span>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                         <div class="space-y-1">
-                            <label class="block text-[12px] font-black uppercase">From</label>
+                            <label class="block text-[10px] font-black uppercase text-slate-400">From</label>
                             <input type="text" ${isReadonly} oninput="checkChanges()" class="inp-from w-full p-3 border-none rounded-2xl text-[10px] font-bold uppercase focus:ring-1 focus:ring-blue-400 outline-none" value="${d.from || ''}">
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[12px] font-black uppercase">DEPLOY ID</label>
+                            <label class="block text-[10px] font-black uppercase text-slate-400">DEPLOY ID</label>
                             <input type="text" ${isReadonly} oninput="checkChanges()" class="inp-id w-full p-3 border-none rounded-2xl text-[10px] font-black text-blue-500 bg-blue-500/10 uppercase outline-none" value="${d.id || ''}">
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[12px] font-black uppercase">Batch</label>
-                            <select ${isReadonly} onchange="checkChanges()" class="inp-batch w-full p-3 border-none rounded-2xl text-[9px] font-bold uppercase outline-none">
+                            <label class="block text-[10px] font-black uppercase text-slate-400">Batch</label>
+                            <select ${isReadonly} onchange="checkChanges()" class="inp-batch w-full p-3 border-none rounded-2xl text-[9px] font-bold uppercase outline-none cursor-pointer">
                                 ${['0/0 P','3/3000 P','5/3000 P','10/3000 P'].map(o => `<option value="${o}" ${d.batch===o?'selected':''}>${o}</option>`).join('')}
                             </select>
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[12px] font-black uppercase">Rules</label>
-                            <select ${isReadonly} onchange="checkChanges()" class="inp-rules w-full p-3 border-none rounded-2xl text-[9px] font-bold uppercase outline-none">
+                            <label class="block text-[10px] font-black uppercase text-slate-400">Rules</label>
+                            <select ${isReadonly} onchange="checkChanges()" class="inp-rules w-full p-3 border-none rounded-2xl text-[9px] font-bold uppercase outline-none cursor-pointer">
                                 ${['SELECT ALL IPS','SELECT 30 IPS MAX','SELECT 50 IPS MAX','RANDOM ON SELECTED','RANDOM ON SERVER SELECTED','RANDOM ON CLASS','2 IPS RANDOM ON SERVER SELECTED'].map(o => `<option value="${o}" ${d.rules===o?'selected':''}>${o}</option>`).join('')}
                             </select>
                         </div>
                     </div>
                     <div class="relative mt-2">
-                        <label class="block text-[12px] font-black uppercase italic mb-1.5 px-1">IPS LIST</label>
-                        <textarea id="ips-${i}" ${isReadonly} oninput="updateIPCount(this); checkChanges();" class="inp-ips w-full p-4 bg-slate-900 text-slate-200 border-none rounded-[1.5rem] font-mono text-[10px] uppercase outline-none focus:ring-2 focus:ring-blue-500 transition-all" rows="${userRole==='viewer'? 8 : 2}">${d.ips || ''}</textarea>
+                        <label class="block text-[10px] font-black uppercase italic mb-1.5 px-1 text-slate-400">IPS LIST</label>
+                        <textarea id="ips-${i}" ${isReadonly} oninput="updateIPCount(this); checkChanges();" class="inp-ips w-full p-4 bg-slate-900/80 text-slate-200 border-none rounded-[1.5rem] font-mono text-[10px] uppercase outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner" rows="${userRole==='viewer'? 8 : 2}">${d.ips || ''}</textarea>
                     </div>
                 </div>`;
             }
@@ -699,6 +755,7 @@
         function checkChanges() {
             if(userRole === 'viewer') return;
             let changed = false;
+            let globalChanged = false;
             
             // Global Stats check
             if(document.getElementById('glb_rdps').value !== (globalStatsData.rdps||"") ||
@@ -707,6 +764,7 @@
                document.getElementById('glb_pause').value !== (globalStatsData.pause||"") ||
                document.getElementById('glb_proxy').value !== (globalStatsData.proxy||"")) {
                    changed = true;
+                   globalChanged = true;
             }
 
             if(currentPlatform) {
@@ -730,7 +788,21 @@
                     }
                 }
             }
-            document.getElementById('saveBtn').disabled = !changed;
+            
+            // Logic for Toolbar Visibility
+            const toolbar = document.getElementById('actionToolbar');
+            if (changed) {
+                toolbar.classList.remove('hidden');
+                document.getElementById('saveBtn').disabled = !changed;
+            } else {
+                toolbar.classList.add('hidden');
+            }
+            
+            // Specific logic for Super Admin:
+            // If Global Changed, show toolbar even if no platform selected
+            if (globalChanged && userRole === 'super') {
+                toolbar.classList.remove('hidden');
+            }
         }
 
         async function saveAll() {
@@ -746,6 +818,12 @@
                     proxy: document.getElementById('glb_proxy').value
                 };
                 await db.ref('ems6/global_stats').set(newGlobal);
+            }
+            
+            // If no platform is selected, we stop here (after saving global)
+            if (!currentPlatform) {
+                 location.reload();
+                 return;
             }
 
             // Save Platform specific
@@ -794,29 +872,32 @@
             };
             await db.ref('ems6/global_stats').set(newGlobal);
 
-            // Save Platform
-            const editorName = document.getElementById('editorSelect').value;
-            const cards = document.querySelectorAll('.deploy-card');
-            const deploys = Array.from(cards).map(c => ({ from: c.querySelector('.inp-from').value.trim(), id: c.querySelector('.inp-id').value.trim(), batch: c.querySelector('.inp-batch').value, rules: c.querySelector('.inp-rules').value, ips: c.querySelector('.inp-ips').value.trim() }));
-			
-            const stats = { 
-			seeds: document.getElementById('statSeeds').value, 
-			rdps: document.getElementById('statRDPs').value, 
-			sessions: document.getElementById('statSessions').value,
-			proxy: "",
-			nbrseploysperday: document.getElementById('nbrseploysperday').value,
-			nbrseedsperhour: document.getElementById('nbrseedsperhour').value,
-			nbrseedsperday: document.getElementById('nbrseedsperday').value,
-			nbrlancement: document.getElementById('nbrlancement').value,
-			rotMin: document.getElementById('rotMin').value, 
-			rotMax: document.getElementById('rotMax').value, 
-			quality: document.getElementById('statQuality').value, 
-			paused: document.getElementById('statPaused').value, 
-			start: document.getElementById('statStart').value, 
-			end: document.getElementById('statEnd').value, 
-			rotDetails: document.getElementById('rotDetailText').value 
-			};
-            await db.ref(`ems6/plans/${currentPlatform}/current`).set({ deploys, filter: document.getElementById('filterInput').value.trim(), stats, editor: editorName, updatedAt: new Date().toLocaleString() });
+            // If a platform is selected, save it too
+            if (currentPlatform) {
+                const editorName = document.getElementById('editorSelect').value;
+                const cards = document.querySelectorAll('.deploy-card');
+                const deploys = Array.from(cards).map(c => ({ from: c.querySelector('.inp-from').value.trim(), id: c.querySelector('.inp-id').value.trim(), batch: c.querySelector('.inp-batch').value, rules: c.querySelector('.inp-rules').value, ips: c.querySelector('.inp-ips').value.trim() }));
+                
+                const stats = { 
+                seeds: document.getElementById('statSeeds').value, 
+                rdps: document.getElementById('statRDPs').value, 
+                sessions: document.getElementById('statSessions').value,
+                proxy: "",
+                nbrseploysperday: document.getElementById('nbrseploysperday').value,
+                nbrseedsperhour: document.getElementById('nbrseedsperhour').value,
+                nbrseedsperday: document.getElementById('nbrseedsperday').value,
+                nbrlancement: document.getElementById('nbrlancement').value,
+                rotMin: document.getElementById('rotMin').value, 
+                rotMax: document.getElementById('rotMax').value, 
+                quality: document.getElementById('statQuality').value, 
+                paused: document.getElementById('statPaused').value, 
+                start: document.getElementById('statStart').value, 
+                end: document.getElementById('statEnd').value, 
+                rotDetails: document.getElementById('rotDetailText').value 
+                };
+                await db.ref(`ems6/plans/${currentPlatform}/current`).set({ deploys, filter: document.getElementById('filterInput').value.trim(), stats, editor: editorName, updatedAt: new Date().toLocaleString() });
+            }
+            
             location.reload();
         }
 
@@ -864,8 +945,6 @@
                 setTimeout(() => { btn.innerText = originalText; btn.classList.replace('bg-emerald-500', 'bg-blue-600'); }, 2000);
             });
         }
-		
-		document.documentElement.classList.toggle('dark');
     </script>
 </body>
 </html>
