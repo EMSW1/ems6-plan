@@ -1,3 +1,5 @@
+--- START OF FILE text/html ---
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -519,12 +521,11 @@
                     <div class="admin-only w-1/3">
                         <label class="block text-[12px] font-black uppercase mb-2 italic text-blue-600 dark:text-blue-300">EDITOR</label>
                         <select id="editorSelect" onchange="checkChanges()" class="w-full p-3 border-none rounded-2xl font-black text-[10px] outline-none hover:bg-white/10 transition-colors cursor-pointer">
-                            <option value="HAKIM DRYGHAL">HAKIM DRYGHAL</option>
-                            <option value="HICHAM EL BOUAZAOUI">HICHAM EL BOUAZAOUI</option>
-                            <option value="YASSINE EL HADAD">YASSINE EL HADAD</option>
-                            <option value="YOUNES BOUASLA">YOUNES BOUASLA</option>
-                            <option value="IMAD KEJEIOU">IMAD KEJEIOU</option>
-							<option value="ISMAIL ABERAOUZ">ISMAIL ABERAOUZ</option>
+                            <option value="MOHAMED IAROCHENE">MOHAMED IAROCHENE</option>
+                            <option value="MEHDI AOURACHE">MEHDI AOURACHE</option>
+                            <option value="ALLAL GASMI">ALLAL GASMI</option>
+                            <option value="ISMAIL BENKIRANE">ISMAIL BENKIRANE</option>
+                            <option value="ANOUAR MOUATASSIM">ANOUAR MOUATASSIM</option>
                         </select>
                     </div>
                     <div class="admin-only w-1/4">
@@ -557,8 +558,7 @@
 
     <script>
         const CONFIG = {
-            <!-- adminKey: "ems6@2026",  -->
-            <!-- superKey: "emsw@2026..", -->
+            authUrl: "https://auth.ems6-plan.workers.dev",
             firebase: { 
                 apiKey: "AIzaSyB_aylTk3hW60y3Kewlbb4B76J3f-lx0qE", 
                 authDomain: "ems6-reporting.firebaseapp.com", 
@@ -600,7 +600,7 @@
             generateSpaceEffect();
 
             const params = new URLSearchParams(window.location.search);
-            const key = localStorage.getItem('ems6_key');
+            const savedRole = localStorage.getItem('ems6_role');
             const isViewMode = params.get('mode') === 'view';
 
             if (isViewMode) {
@@ -613,8 +613,8 @@
                 return; 
             }
 
-            if(key === CONFIG.adminKey || key === CONFIG.superKey) {
-                userRole = (key === CONFIG.superKey) ? "super" : "admin";
+            if(savedRole === 'admin' || savedRole === 'super') {
+                userRole = savedRole;
                 document.body.classList.add(userRole + '-mode');
                 await initApp();
             } else {
@@ -1036,7 +1036,7 @@
                 const publicUrl = "https://ems6-plan.pages.dev/";
                 const viewLink = `${publicUrl}?mode=view&plat=${currentPlatform}&target=true`;
                 let changesText = ""; logChanges.forEach(l => { changesText += "• " + l + "\n"; });
-                const telegramMsg = `🔄 <b>UPDATE: #${currentPlatform}</b>\n` + `👤 <b>BY : ${editorName}</b>\n` + `━━━━━━━━━━━━━━━\n` + `📝 <b>CHANGES:</b>\n` + `${changesText}` + `━━━━━━━━━━━━━━━\n` + `🔗 <a href="${viewLink}"><b>VIEW MODIFICATIONS</b></a>`;
+                const telegramMsg = `🚀 <b>UPDATE: #${currentPlatform}</b>\n` + `🖥️ <b>EDIT BY : ${editorName}</b>\n` + `━━━━━━━━━━━━━━━\n` + `📝 <b>CHANGES:</b>\n` + `${changesText}` + `━━━━━━━━━━━━━━━\n` + `🔗 <a href="${viewLink}"><b>VIEW MODIFICATIONS</b></a>`;
                 try { await fetch(`https://api.telegram.org/bot${CONFIG.telegram.token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: CONFIG.telegram.chatId, text: telegramMsg, parse_mode: 'HTML' }) }); } catch (e) { console.error("Telegram Error:", e); }
             }
             
@@ -1107,8 +1107,30 @@
 
         function openRot() { document.getElementById('rotDetailPanel').style.display = 'block'; }
         function closeRot() { document.getElementById('rotDetailPanel').style.display = 'none'; }
-        function checkAccess() { const k = document.getElementById('accessKey').value; if(k === CONFIG.adminKey || k === CONFIG.superKey) { localStorage.setItem('ems6_key', k); location.reload(); } }
-        function logout() { localStorage.removeItem('ems6_key'); location.reload(); }
+        function checkAccess() { 
+            const k = document.getElementById('accessKey').value; 
+            
+            fetch(CONFIG.authUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: k })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem('ems6_key', 'valid'); // Dummy value just to check existence if needed
+                    localStorage.setItem('ems6_role', data.role);
+                    location.reload();
+                } else {
+                    alert("Access Denied");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Error connecting to Auth Service");
+            });
+        }
+        function logout() { localStorage.removeItem('ems6_key'); localStorage.removeItem('ems6_role'); location.reload(); }
         
         function copyIPs(index, btn) {
             const textarea = document.getElementById(`ips-${index}`);
