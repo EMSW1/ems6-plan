@@ -116,6 +116,10 @@
         .viewer-only-btn { display: none !important; }
         .viewer-mode .viewer-only-btn { display: flex !important; }
         .viewer-mode .delete-btn { display: none !important; }
+        
+        /* New Styles for Filter Preview */
+        .viewer-only-box { display: none !important; }
+        .viewer-mode .viewer-only-box { display: block !important; }
 
         #darkToggle { transition: all 0.3s; }
         #darkToggle:active { transform: scale(0.9); }
@@ -140,7 +144,7 @@
         }
         .dark .plat-title { background: linear-gradient(to right, #60a5fa, #c084fc); -webkit-background-clip: text; }
         
-        .global-stat-box { text-align: center; padding: 0.5rem; border-right: 1px solid rgba(128,128,128,0.2); }
+        .global-stat-box { text-align: center; padding: 0.5rem; border-right: 1px solid rgba(128,128,128,0.2); position: relative; }
         .global-stat-box:last-child { border-right: none; }
         .global-stat-val { font-size: 1.2rem; font-weight: 900; width: 100%; text-align: center; background: transparent !important; border: none !important; outline: none; }
         .dark .global-stat-val { text-shadow: 0 0 10px currentColor; }
@@ -170,6 +174,39 @@
                 <input type="password" id="accessKey" onkeypress="if(event.key==='Enter') checkAccess()" placeholder="••••••••" class="w-full p-4 border-none rounded-2xl mb-4 text-center font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-900 dark:text-white placeholder-slate-400">
                 <button onclick="checkAccess()" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white p-4 rounded-2xl font-black uppercase shadow-lg transform hover:scale-105 transition-all">Unlock</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Seeds Breakdown Modal (NEW) -->
+    <div id="seedsBreakdownModal" class="glass-card p-8 rounded-[2rem] border-t-8 border-emerald-500 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[300] w-[95%] max-w-md hidden shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-black uppercase italic text-emerald-800 dark:text-emerald-400">TOTAL SEEDS</h3>
+            <button onclick="closeSeedsBreakdown()" class="w-8 h-8 flex items-center justify-center bg-slate-200 dark:bg-slate-700 rounded-full hover:bg-red-500 hover:text-white transition-all text-slate-600 dark:text-slate-300">✕</button>
+        </div>
+        <div class="bg-slate-50/50 dark:bg-slate-800/30 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 mb-4">
+             <div class="flex justify-between items-center mb-4 border-b border-dashed border-slate-300 dark:border-slate-600 pb-2">
+                 <span class="font-bold text-xs uppercase text-slate-500">Global Total</span>
+                 <span id="modal-total-seeds-display" class="font-black text-xl text-emerald-600">0</span>
+             </div>
+             <div id="seeds-breakdown-list" class="space-y-3">
+                 <!-- Dynamic Content -->
+             </div>
+        </div>
+        <button id="saveSeedsBtn" onclick="saveSeedsBreakdown()" class="hidden w-full bg-emerald-600 text-white py-3 rounded-xl font-black uppercase shadow-lg hover:shadow-emerald-500/30">UPDATE SEEDS</button>
+    </div>
+
+    <!-- History Modal (NEW) -->
+    <div id="historyModal" class="glass-card p-6 rounded-[2rem] border-t-8 border-violet-600 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[350] w-[95%] max-w-2xl hidden shadow-2xl max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h3 class="text-xl font-black uppercase italic text-violet-800 dark:text-violet-400">HISTORIQUE</h3>
+                <p class="text-[10px] text-slate-500 font-bold">LAST 24 HOURS ONLY</p>
+            </div>
+            <button onclick="closeHistory()" class="w-8 h-8 flex items-center justify-center bg-slate-200 dark:bg-slate-700 rounded-full hover:bg-red-500 hover:text-white transition-all text-slate-600 dark:text-slate-300">✕</button>
+        </div>
+        <div id="historyList" class="flex-1 overflow-y-auto space-y-3 pr-2">
+            <!-- Dynamic History Items -->
+            <div class="text-center text-slate-400 py-10 font-bold italic">Loading history...</div>
         </div>
     </div>
 
@@ -203,7 +240,7 @@
                  </div>
              </div>
              <div class="flex flex-col">
-                 <h4 class="font-bold text-xs uppercase text-slate-500 mb-2">Rotation Log</h4>
+                 <h4 class="font-bold text-xs uppercase text-slate-500 mb-2">Rotation Seeds</h4>
                  <textarea id="rotDetailText" class="flex-1 p-4 border-none rounded-2xl font-mono text-xs uppercase outline-none focus:ring-2 focus:ring-blue-400 transition-all bg-slate-100 dark:bg-slate-900 super-locked"></textarea>
              </div>
         </div>
@@ -222,6 +259,9 @@
                 <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">REPORTING</p>
             </div>
             <div class="flex items-center gap-3 relative z-10">
+                <button onclick="openHistory()" class="admin-only flex items-center gap-1 p-2.5 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300 rounded-xl hover:bg-violet-200 hover:scale-105 transition-all shadow-sm font-bold text-xs uppercase tracking-wider">
+                    <span>🕒</span> History
+                </button>
                 <button id="darkToggle" onclick="toggleDarkMode()" class="p-2.5 bg-white dark:bg-slate-800/80 rounded-xl hover:scale-110 transition-all shadow-md text-slate-800 dark:text-white">
                     <span class="dark:hidden text-lg">🌙</span><span class="hidden dark:inline text-lg">☀️</span>
                 </button>
@@ -238,9 +278,14 @@
                 <div class="global-stat-label text-blue-700 font-bold dark:text-blue-400">TOTAL RDPs</div>
                 <input type="text" id="glb_rdps" oninput="checkChanges()" class="global-stat-val text-blue-700 dark:text-blue-500 super-locked" placeholder="-">
             </div>
-            <div class="global-stat-box hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-xl">
+            <div class="global-stat-box hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-xl relative group">
                 <div class="global-stat-label text-emerald-700 font-bold dark:text-emerald-400">TOTAL SEEDS</div>
-                <input type="text" id="glb_seeds" readonly class="global-stat-val text-emerald-700 dark:text-emerald-500 auto-calc" placeholder="0">
+                <div class="relative flex items-center justify-center w-full">
+                    <input type="text" id="glb_seeds" readonly class="global-stat-val text-emerald-700 dark:text-emerald-500 auto-calc" placeholder="0">
+                    <button onclick="openSeedsBreakdown()" class="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-600 transition-colors" title="View Details">
+                        🔎
+                    </button>
+                </div>
             </div>
             <div class="global-stat-box hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-xl">
                 <div class="global-stat-label text-purple-700 font-bold dark:text-purple-400">QUALITÉ</div>
@@ -262,7 +307,6 @@
                 <div class="w-full">
                     <label class="block text-xs font-black uppercase mb-2 italic text-purple-600 dark:text-purple-400 tracking-wider">EDITING BY</label>
                     <select id="globalEditor" onchange="checkChanges()" class="w-full p-4 border-none rounded-xl font-black text-sm outline-none bg-purple-50/50 dark:bg-purple-900/20 cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all">
-						<option value="HICHAM EL BOUAZAOUI">HICHAM EL BOUAZAOUI</option>
 								<option value="HAKIM DRYGHAL">HAKIM DRYGHAL</option>
 								<option value="YASSINE EL HADAD">YASSINE EL HADAD</option>
 								<option value="YOUNES BOUASLA">YOUNES BOUASLA</option>
@@ -523,6 +567,9 @@
 
             renderAllPlatforms();
             generateDynamicAdminTools(); // Generate Checkboxes based on PLATFORMS
+            
+            // Clean old history on init if Admin
+            if(userRole !== 'viewer') cleanOldHistory();
         }
 
         function generateDynamicAdminTools() {
@@ -530,6 +577,9 @@
             const distContainer = document.getElementById('distributor-targets');
             distContainer.innerHTML = '';
             PLATFORMS.forEach(plat => {
+                // SKIP IF PLATFORM IS HIDDEN (DISABLED)
+                if (platVisibility[plat] === false) return;
+
                 // Modified structure to include deploy list container
                 const html = `
                 <div class="flex flex-col bg-white/5 rounded-lg mb-1">
@@ -556,6 +606,9 @@
                 container.innerHTML = '';
                 
                 PLATFORMS.forEach(plat => {
+                    // SKIP IF PLATFORM IS HIDDEN (DISABLED)
+                    if (platVisibility[plat] === false) return;
+
                     // Define colors
                     let color = 'blue';
                     if(type === 'batch') color = 'orange';
@@ -591,18 +644,26 @@
             const params = new URLSearchParams(window.location.search);
             const targetPlat = params.get('plat');
 
+            // 1. First Pass: Fetch Data and Calculate Totals (Including Hidden)
             for (const plat of PLATFORMS) {
-                // Visibility Logic
-                if (userRole !== 'super' && platVisibility[plat] === false) continue;
-                if (targetPlat && plat !== targetPlat) continue;
-
-                // Fetch data for this platform
-                const snap = await db.ref(`ems6/plans/${plat}/current`).once('value');
-                const data = snap.val() || { deploys: [], stats: {}, filter: "" };
-                // Fix missing fields to prevent errors
-                if(!data.deploys) data.deploys = [];
-                if(!data.stats) data.stats = {};
-                platformsData[plat] = data;
+                // Fetch data for ALL platforms, even hidden ones - UNLESS we have local modification
+                // If platformsData[plat].deploys is populated (e.g. from history load), don't fetch from DB again
+                // BUT initApp calls this, so initially it's empty.
+                
+                let data = platformsData[plat];
+                
+                // If data is "empty" (init state), fetch it. 
+                // We check if it has properties other than stats/deploys init
+                if (!data.updatedAt && !data.fromHistory) {
+                    const snap = await db.ref(`ems6/plans/${plat}/current`).once('value');
+                    const dbData = snap.val() || { deploys: [], stats: {}, filter: "" };
+                    
+                    data = dbData;
+                    // Fix missing fields
+                    if(!data.deploys) data.deploys = [];
+                    if(!data.stats) data.stats = {};
+                    platformsData[plat] = data;
+                }
                 
                 // --- SNAPSHOT FOR COMPARISON ---
                 if (!originalPlatformsData[plat]) {
@@ -611,10 +672,19 @@
                 
                 if(!firstEditor && data.editor) firstEditor = data.editor;
 
-                // Accumulate Globals
+                // Accumulate Globals (From ALL platforms)
                 totalSeeds += parseInt(data.stats.seeds || 0);
                 totalQuality += parseInt(data.stats.quality || 0);
                 totalPaused += parseInt(data.stats.paused || 0);
+            }
+
+            // 2. Second Pass: Render Only Visible Platforms
+            for (const plat of PLATFORMS) {
+                const data = platformsData[plat];
+                
+                // Visibility Logic for UI Rendering Only
+                if (userRole !== 'super' && platVisibility[plat] === false) continue;
+                if (targetPlat && plat !== targetPlat) continue;
 
                 // Build HTML Structure for Platform
                 const isHidden = !platVisibility[plat];
@@ -632,12 +702,29 @@
                     `<input type="number" class="w-16 p-1 text-center rounded bg-white/50 text-xs font-bold border border-slate-300" value="${boitesConfig[plat]}" onchange="updateBoitesConfig('${plat}', this.value)">` :
                     `<span class="text-xs font-bold bg-slate-200 dark:bg-slate-800 px-3 py-1 rounded-full text-slate-500">${boitesConfig[plat] || 0}</span>`;
 
+                const lastUpdate = data.updatedAt || '';
+
+                // NEW: Viewer Only Filter Preview Logic
+                let filterPreviewHtml = '';
+                if (['AUTOMAT', 'SELENIUM'].includes(plat)) {
+                    filterPreviewHtml = `
+                    <div class="viewer-only-box mt-3 p-3 bg-slate-200 dark:bg-slate-800 rounded-xl border border-dashed border-slate-400 dark:border-slate-600 select-all">
+                        <div class="font-mono text-[10px] text-slate-800 dark:text-slate-200">
+                            <strong>spam :</strong> <span id="preview-spam-${plat}">${data.filter || ''}</span>
+                        </div>
+                        <div class="font-mono text-[10px] text-slate-800 dark:text-slate-200 mt-1">
+                            <strong>inbox :</strong> is:unread newer_than:1d <span id="preview-inbox-${plat}">${data.filter || ''}</span>
+                        </div>
+                    </div>`;
+                }
+
                 const html = `
                 <div id="wrapper-${plat}" class="platform-section relative ${opacityClass} transition-all duration-300">
                     ${visibilityToggle}
-                    <div class="flex items-center gap-4 mb-4">
+                    <div class="flex flex-wrap items-center gap-4 mb-4">
                         <h2 class="plat-title text-4xl">${plat}</h2>
                         ${boxInput} <span class="text-xs font-bold text-slate-500">BOITES</span>
+                        ${lastUpdate ? `<div class="px-3 py-1 rounded-full bg-slate-200/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 text-[10px] font-black border border-slate-300/50 dark:border-slate-700/50 flex items-center gap-1 shadow-sm"><span>🕒</span>LAST UPDATE : ${lastUpdate}</div>` : ''}
                         <button onclick="openPlatformDetails('${plat}')" class="admin-only bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-3 py-1 rounded-full font-black uppercase shadow transition-all">DETAILS</button>
                     </div>
 
@@ -652,10 +739,17 @@
                             <div class="flex-1">
                                 <label class="block text-[10px] font-black text-slate-500 uppercase mb-1 italic">KEYWORD FILTER</label>
                                 <div class="flex gap-2">
-                                    <input type="text" id="filter-${plat}" value="${data.filter || ''}" oninput="checkChanges()" class="w-full p-2 border-2 border-blue-500/20 rounded-xl font-black text-blue-600 bg-blue-500/5 text-center uppercase focus:border-blue-500 outline-none" placeholder="SEARCH...">
-                                    <button onclick="downloadAllIPs('${plat}', this)" class="viewer-only-btn hidden bg-purple-600 text-white px-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all">DONWLOAD ALL IPS ⬇</button>
-                                    <button onclick="copyAllIDs('${plat}', this)" class="viewer-only-btn hidden bg-blue-600 text-white px-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all">COPY ALL IDs</button>
+                                    <input type="text" id="filter-${plat}" value="${data.filter || ''}" oninput="checkChanges(); updateFilterPreviews('${plat}', this.value)" class="w-full p-2 border-2 border-blue-500/20 rounded-xl font-black text-blue-600 bg-blue-500/5 text-center uppercase focus:border-blue-500 outline-none" placeholder="SEARCH...">
+                                    <button onclick="downloadAllIPs('${plat}', this)" class="viewer-only-btn hidden bg-purple-600 text-white px-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all">DOWNLOAD ALL IPS</button>
+                                    <div class="flex items-center gap-1 viewer-only-btn hidden">
+                                        <button onclick="copyAllIDs('${plat}', this)" class="bg-blue-600 text-white px-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all h-full">COPY ALL IDs</button>
+                                        <div class="flex flex-col gap-0.5 ml-1">
+                                            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="copy_fmt_${plat}" value="vertical" checked class="w-2 h-2 text-blue-600"><span class="text-[8px] font-bold text-blue-600">VERT</span></label>
+                                            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="copy_fmt_${plat}" value="horizontal" class="w-2 h-2 text-blue-600"><span class="text-[8px] font-bold text-blue-600">HORI</span></label>
+                                        </div>
+                                    </div>
                                 </div>
+                                ${filterPreviewHtml}
                             </div>
                         </div>
                         <div class="text-center bg-slate-500/5 p-3 rounded-[1.5rem] border border-dashed border-slate-500/30">
@@ -740,7 +834,7 @@
                         <div>
                             <label class="block text-[9px] font-black uppercase text-slate-500">Batch</label>
                             <select ${isReadonly} onchange="updateDeployData('${plat}', ${i}, 'batch', this.value)" class="inp-batch w-full p-2 border-none rounded-xl text-[9px] font-bold uppercase outline-none cursor-pointer">
-                                ${['0/0 P','3/3000 P','5/3000 P','10/3000 P'].map(o => `<option value="${o}" ${d.batch===o?'selected':''}>${o}</option>`).join('')}
+                                ${['0/0 P','3/3000 P','5/3000 P','10/3000 P','20/3000 P'].map(o => `<option value="${o}" ${d.batch===o?'selected':''}>${o}</option>`).join('')}
                             </select>
                         </div>
                         <div>
@@ -859,7 +953,7 @@
                 deploys.forEach((d, i) => {
                      const html = `
                      <label class="flex items-center gap-1 cursor-pointer p-0.5 rounded hover:bg-white/20">
-                         <input type="checkbox" class="w-3 h-3 rounded text-${color}-500 focus:ring-0 border-gray-300 ${type}-chk-target-${plat}" value="${i}">
+                         <input type="checkbox" class="w-3 h-3 rounded text-${color}-500 focus:ring-0 border-gray-300 generic-chk-target" data-plat="${plat}" value="${i}">
                          <span class="text-[9px] font-bold text-slate-600 dark:text-slate-300">D${i+1}</span>
                      </label>`;
                      container.insertAdjacentHTML('beforeend', html);
@@ -892,7 +986,7 @@
                 deploys.forEach((d, i) => {
                      const html = `
                      <label class="flex items-center gap-1 cursor-pointer p-0.5 rounded hover:bg-emerald-500/10">
-                         <input type="checkbox" class="w-3 h-3 rounded text-emerald-500 focus:ring-emerald-500 border-emerald-300 dist-chk-target-${plat}" value="${i}" checked>
+                         <input type="checkbox" class="w-3 h-3 rounded text-emerald-500 focus:ring-emerald-500 border-emerald-300 dist-deploy-chk" data-plat="${plat}" value="${i}" checked>
                          <span class="text-[9px] font-bold text-emerald-800 dark:text-emerald-300">D${i+1}</span>
                      </label>`;
                      container.insertAdjacentHTML('beforeend', html);
@@ -902,7 +996,8 @@
         
         function toggleAllDistItems(plat, source) {
             const list = document.getElementById(`dist-list-${plat}`);
-            const boxes = list.querySelectorAll(`.dist-chk-target-${plat}`);
+            if(!list) return;
+            const boxes = list.querySelectorAll(`.dist-deploy-chk`);
             boxes.forEach(b => b.checked = source.checked);
         }
         
@@ -982,8 +1077,11 @@
             let appliedCount = 0;
             PLATFORMS.forEach(plat => {
                  const chk = document.getElementById(`${field}-chk-${plat}`);
-                 if(chk && chk.checked) {
-                     const checkboxes = document.querySelectorAll(`.${field}-chk-target-${plat}:checked`);
+                 const list = document.getElementById(`${field}-list-${plat}`);
+                 
+                 if(chk && chk.checked && list) {
+                     // Updated selector to use class and container instead of class-with-plat-name
+                     const checkboxes = list.querySelectorAll(`.generic-chk-target:checked`);
                      checkboxes.forEach(chk => {
                          const idx = parseInt(chk.value);
                          if(platformsData[plat].deploys[idx]) {
@@ -1011,10 +1109,12 @@
             const targets = [];
             PLATFORMS.forEach(p => {
                 const chk = document.getElementById('chk-'+p);
-                if(chk && chk.checked) {
+                const list = document.getElementById('dist-list-'+p);
+                
+                if(chk && chk.checked && list) {
                     if(platformsData[p] && platformsData[p].deploys) {
-                        // NEW LOGIC: Check specific checkboxes instead of all
-                        const specificChks = document.querySelectorAll(`.dist-chk-target-${p}:checked`);
+                        // NEW LOGIC: Select using the common class within the container
+                        const specificChks = list.querySelectorAll(`.dist-deploy-chk:checked`);
                         
                         if (specificChks.length > 0) {
                             specificChks.forEach(c => {
@@ -1022,10 +1122,6 @@
                                 platformsData[p].deploys[idx].ips = ""; // Clear specific target
                                 targets.push({plat: p, index: idx});
                             });
-                        } else {
-                           // If Platform is checked but no children (should not happen due to auto-select, but fallback)
-                           // Do nothing or user intended to clear? 
-                           // For safety, if no specific targets are checked, we don't distribute to this platform.
                         }
                     }
                 }
@@ -1079,6 +1175,16 @@
             document.getElementById('actionToolbar').classList.remove('hidden');
         }
 
+        function escapeHtml(text) {
+          if (!text) return text;
+          return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+        }
+
         async function saveAll(sendNotif = true) {
             document.getElementById('loadingOverlay').style.display = 'flex';
             
@@ -1096,20 +1202,28 @@
             
             const editorName = document.getElementById('globalEditor').value;
             
-            // Identify visible platforms (Super admin sees all, others see visible only)
+            // Identify visible platforms
             const platsToSave = PLATFORMS.filter(p => userRole === 'super' || platVisibility[p]);
             
-            // Loop through all platforms to save changes and send notifications per platform
+            // --- HISTORY LOGIC PREPARATION ---
+            // We want to capture the "Snapshot" of modifications made at this time
+            // Only for platforms that actually changed.
+            let historySnapshot = {}; 
+            let fullGlobalChangesLog = [];
+            let anyRealChanges = false;
+            // ---------------------------------
+
+            // Loop through all platforms
             for (const plat of platsToSave) {
                 const currentPlatform = plat;
                 const platformData = platformsData[plat];
                 
-                // Safety check if platform data is loaded
                 if(!platformData) continue;
 
                 // Prepare Data
                 const deploys = platformData.deploys || [];
-                const filter = document.getElementById(`filter-${plat}`)?.value.trim() || "";
+                const filterInput = document.getElementById(`filter-${plat}`);
+                const filter = filterInput ? filterInput.value.trim() : "";
                 const stats = platformData.stats || {};
                 
                 // --- DIFF LOGIC ---
@@ -1120,11 +1234,15 @@
                 let hasRealChanges = false;
                 
                 // Track internal changes
-                if((originalData.filter || "") !== filter) {
-                    logChanges.push("• Global Filter updated");
+                const oldFilter = originalData.filter || "";
+                if(oldFilter !== filter) {
+                    logChanges.push(`• KEYWORD FILTER updated`);
+                    hasRealChanges = true;
                 }
+                
                 if(JSON.stringify(stats) !== JSON.stringify(originalData.stats || {})) {
                     logChanges.push("• Performance Stats updated");
+                    hasRealChanges = true;
                 }
 
                 if (deploys.length === 0) {
@@ -1158,39 +1276,211 @@
                      }
                 }
                 
+                // Create formatted date: DD/MM/YYYY HHhMM
+                const now = new Date();
+                const day = String(now.getDate()).padStart(2, '0');
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const year = now.getFullYear();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const formattedDate = `${day}/${month}/${year} ${hours}h${minutes}`;
+
+                // --- ADD TO HISTORY SNAPSHOT IF CHANGED ---
+                if (hasRealChanges) {
+                    anyRealChanges = true;
+                    // We save the NEW state as a snapshot for this platform
+                    historySnapshot[plat] = {
+                        deploys: JSON.parse(JSON.stringify(deploys)),
+                        filter: filter,
+                        stats: JSON.parse(JSON.stringify(stats)),
+                        editor: editorName
+                    };
+                    fullGlobalChangesLog.push({ plat: plat, changes: logChanges });
+                }
+                // -----------------------------------------
+
                 // Save to Firebase
                 await db.ref(`ems6/plans/${currentPlatform}/current`).set({ 
                     deploys, 
                     filter, 
                     stats, 
                     editor: editorName, 
-                    updatedAt: new Date().toLocaleString() 
+                    updatedAt: formattedDate 
                 });
 
                 // Send Telegram (ONLY if sendNotif is true AND actual Deploy changes detected)
                 if (sendNotif && hasRealChanges) {
+                    // Dynamic URL Logic: first letter + lowercased (WEB -> ems6)
+                    const platKey = currentPlatform.charAt(0).toLowerCase();
                     const platformUrl = `https://ems6-plan.pages.dev/`;
-                    const viewLink = `${platformUrl}?mode=view&plat=${currentPlatform}&target=true`;
+                    const viewLink = `${platformUrl}?mode=view&plat=${encodeURIComponent(currentPlatform)}&target=true`;
                     
+                    const safePlat = escapeHtml(currentPlatform);
+                    const safeEditor = escapeHtml(editorName);
+
                     let telegramMsg = "";
                     if (deploys.length === 0 && oldDeploys.length > 0) {
-                        telegramMsg = `⚠️ <b>STOPPED: #${currentPlatform}</b>\n` + `👤 <b>BY : ${editorName}</b>\n` + `━━━━━━━━━━━━━━━\n` + `🚫 <b>ALL DEPLOYS REMOVED</b>\n` + `━━━━━━━━━━━━━━━\n` + `🔗 <a href="${viewLink}"><b>VIEW PLAN</b></a>`;
+                        telegramMsg = `⚠️ <b>STOPPED: #${safePlat}</b>\n` + `👤 <b>BY : ${safeEditor}</b>\n` + `━━━━━━━━━━━━━━━\n` + `🚫 <b>ALL DEPLOYS REMOVED</b>\n` + `━━━━━━━━━━━━━━━\n` + `🔗 <a href="${viewLink}"><b>VIEW PLAN</b></a>`;
                     } else {
-                        const changesText = logChanges.length > 0 ? logChanges.join('\n') : "• Saved by user";
-                        telegramMsg = `🔄 <b>#${currentPlatform} UPDATE</b>\n` + `👤 <b>BY: ${editorName}</b>\n` + `📝 <b>CHANGES:</b>\n` + `${changesText}\n` + `━━━━━━━━━━━━━━━\n` + `🔗 <b><a href="${viewLink}">VIEW PLAN</a></b>`;
+                        const changesText = logChanges.length > 0 ? logChanges.map(c => escapeHtml(c)).join('\n') : "• Saved by user";
+                        telegramMsg = `🔄 <b>#${safePlat} UPDATE</b>\n` + `👤 <b>BY: ${safeEditor}</b>\n` + `📝 <b>CHANGES:</b>\n` + `${changesText}\n` + `━━━━━━━━━━━━━━━\n` + `🔗 <b><a href="${viewLink}">VIEW PLAN</a></b>`;
                     }
                     
                     try { 
-                        await fetch(`https://api.telegram.org/bot${CONFIG.telegram.token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: CONFIG.telegram.chatId, text: telegramMsg, parse_mode: 'HTML' }) }); 
-                    } catch (e) { console.error("Telegram Error:", e); }
+                        const resp = await fetch(`https://api.telegram.org/bot${CONFIG.telegram.token}/sendMessage`, { 
+                            method: 'POST', 
+                            headers: { 'Content-Type': 'application/json' }, 
+                            body: JSON.stringify({ chat_id: CONFIG.telegram.chatId, text: telegramMsg, parse_mode: 'HTML' }) 
+                        });
+                        if(!resp.ok) {
+                            const errData = await resp.json();
+                            console.error('Telegram Error', errData);
+                            alert('Telegram Error: ' + (errData.description || 'Unknown'));
+                        }
+                    } catch (e) { 
+                        console.error("Telegram Error:", e);
+                        alert("Telegram Connection Error: " + e.message);
+                    }
                 }
                 
                 originalPlatformsData[currentPlatform] = JSON.parse(JSON.stringify({ deploys, filter, stats, editor: editorName }));
             }
             
+            // --- SAVE TO HISTORY (LAST 24h) ---
+            if (anyRealChanges) {
+                const now = new Date();
+                const historyEntry = {
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    dateString: now.toLocaleString('en-GB', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' }),
+                    editor: editorName,
+                    summary: fullGlobalChangesLog,
+                    snapshot: historySnapshot // Only save Modified Platforms
+                };
+                await db.ref('ems6/history').push(historyEntry);
+                cleanOldHistory(); // Clean up old entries
+            }
+            // ----------------------------------
+            
             setTimeout(() => { location.reload(); }, 500);
         }
         
+        // --- HISTORY FUNCTIONS ---
+        
+        async function cleanOldHistory() {
+            // Remove entries older than 24 hours (86400000 ms)
+            const cutoff = Date.now() - 86400000;
+            const ref = db.ref('ems6/history');
+            
+            try {
+                const snap = await ref.orderByChild('timestamp').endAt(cutoff).once('value');
+                if (snap.exists()) {
+                    const updates = {};
+                    snap.forEach(child => {
+                        updates[child.key] = null;
+                    });
+                    await ref.update(updates);
+                    console.log("Old history cleaned");
+                }
+            } catch(e) { console.error("History cleanup error", e); }
+        }
+
+        async function openHistory() {
+            document.getElementById('historyModal').classList.remove('hidden');
+            const list = document.getElementById('historyList');
+            list.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold italic animate-pulse">Loading modifications...</div>';
+            
+            try {
+                // Fetch last 50 entries (should cover 24h usually)
+                const snap = await db.ref('ems6/history').orderByChild('timestamp').limitToLast(50).once('value');
+                
+                list.innerHTML = '';
+                if(!snap.exists()) {
+                    list.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold italic">No history found for last 24h.</div>';
+                    return;
+                }
+
+                let entries = [];
+                snap.forEach(child => {
+                    entries.unshift({ key: child.key, ...child.val() }); // Descending order
+                });
+
+                entries.forEach(entry => {
+                    const changesHtml = (entry.summary || []).map(s => {
+                        const items = s.changes.map(c => `<div>${c}</div>`).join('');
+                        return `<div class="mb-1"><strong class="text-xs text-blue-600 dark:text-blue-400">${s.plat}:</strong>${items}</div>`;
+                    }).join('');
+
+                    const row = `
+                    <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-start gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 px-2 py-0.5 rounded-md text-[10px] font-black">${entry.dateString || 'Unknown Date'}</span>
+                                <span class="text-[10px] font-bold text-slate-500 uppercase">BY ${entry.editor}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-600 dark:text-slate-300 font-mono leading-relaxed pl-2 border-l-2 border-slate-300 dark:border-slate-700">
+                                ${changesHtml || 'No specific details'}
+                            </div>
+                        </div>
+                        <button onclick="loadHistoryState('${entry.key}')" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg font-black text-[10px] uppercase shadow-md active:scale-95 transition-all whitespace-nowrap">
+                            LOAD
+                        </button>
+                    </div>`;
+                    list.insertAdjacentHTML('beforeend', row);
+                });
+            } catch(e) {
+                list.innerHTML = '<div class="text-center text-red-400 py-10 font-bold italic">Error loading history.</div>';
+                console.error(e);
+            }
+        }
+
+        function closeHistory() {
+            document.getElementById('historyModal').classList.add('hidden');
+        }
+
+        async function loadHistoryState(key) {
+            if(!confirm("LOAD this state?\nThis will overwrite your current screen with the modifications from that time.\nYou must click SAVE manually if you want to keep this state.")) return;
+            
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            closeHistory();
+
+            try {
+                const snap = await db.ref(`ems6/history/${key}`).once('value');
+                if(!snap.exists()) {
+                    alert("History entry not found.");
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    return;
+                }
+
+                const data = snap.val();
+                const snapshot = data.snapshot || {};
+
+                // Restore logic: Merge snapshot into platformsData
+                let restoredCount = 0;
+                for (const plat in snapshot) {
+                    if (platformsData[plat]) {
+                        // We replace the current local data with the snapshot data
+                        platformsData[plat] = snapshot[plat];
+                        platformsData[plat].fromHistory = true; // Flag to prevent re-fetch in render
+                        restoredCount++;
+                    }
+                }
+
+                // Re-render UI
+                await renderAllPlatforms();
+                
+                // Enable save button because we modified state
+                checkChanges();
+                
+                alert(`Successfully loaded modifications for ${restoredCount} platform(s).\nReview and click 'SAVE CHANGES' to persist.`);
+
+            } catch(e) {
+                console.error(e);
+                alert("Error restoring history.");
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
         async function superQuickSave() {
              // Explicitly passing false to ensure no Telegram notifications are sent
              saveAll(false); 
@@ -1209,7 +1499,12 @@
         // --- Helper Functions ---
         function checkAccess() {
             const k = document.getElementById('accessKey').value;
-            fetch(CONFIG.authUrl, {
+            
+            // Fix URL if missing protocol
+            let url = CONFIG.authUrl;
+            if (!url.startsWith('http')) url = 'https://' + url;
+
+            fetch(url, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password: k })
             }).then(r=>r.json()).then(d=>{
@@ -1217,7 +1512,10 @@
                     localStorage.setItem('ems6_key', 'valid'); localStorage.setItem('ems6_role', d.role);
                     location.reload();
                 } else alert('Access Denied');
-            }).catch(()=>alert('Auth Error'));
+            }).catch((e)=>{
+                console.error(e);
+                alert('Auth Error: ' + e.message);
+            });
         }
         function logout() { localStorage.clear(); location.reload(); }
         
@@ -1261,12 +1559,20 @@
         function copyAllIDs(plat, btn) {
             const wrapper = document.getElementById(`wrapper-${plat}`);
             const inputs = wrapper.querySelectorAll('.inp-id');
-            const ids = Array.from(inputs).map((inp, i) => {
-                 const v = inp.value.trim();
-                 return v ? `D${i+1} : ${v}` : null;
-            }).filter(v => v).join('\n');
             
-            if(ids) navigator.clipboard.writeText(ids).then(() => {
+            // Get format (horizontal or vertical) from radio buttons
+            const fmt = document.querySelector(`input[name="copy_fmt_${plat}"]:checked`)?.value || 'vertical';
+            
+            const ids = Array.from(inputs).map((inp) => inp.value.trim());
+            
+            let result = "";
+            if (fmt === 'horizontal') {
+                result = ids.filter(v => v).join(',');
+            } else {
+                result = ids.map((v, i) => v ? `D${i+1} : ${v}` : null).filter(v => v).join('\n');
+            }
+            
+            if(result) navigator.clipboard.writeText(result).then(() => {
                 const old = btn.innerText; btn.innerText = "COPIED!"; setTimeout(()=>btn.innerText=old, 1500);
             });
         }
@@ -1278,6 +1584,9 @@
             const wrapper = document.getElementById(`wrapper-${plat}`);
             if(platVisibility[plat]) wrapper.classList.remove('opacity-50', 'grayscale');
             else wrapper.classList.add('opacity-50', 'grayscale');
+            
+            // Refresh admin tools to hide/show platform immediately
+            generateDynamicAdminTools();
         }
 
         // PLATFORM DETAILS MODAL
@@ -1332,6 +1641,102 @@
             if(platformsData[plat] && platformsData[plat].deploys.length > 0) {
                 removeDeploy(plat, platformsData[plat].deploys.length - 1);
             }
+        }
+
+        function updateFilterPreviews(plat, val) {
+            const spamEl = document.getElementById(`preview-spam-${plat}`);
+            const inboxEl = document.getElementById(`preview-inbox-${plat}`);
+            if(spamEl) spamEl.innerText = val;
+            if(inboxEl) inboxEl.innerText = val;
+        }
+
+        // --- NEW: Global Seeds Breakdown Logic ---
+        function openSeedsBreakdown() {
+            const modal = document.getElementById('seedsBreakdownModal');
+            const list = document.getElementById('seeds-breakdown-list');
+            const totalDisplay = document.getElementById('modal-total-seeds-display');
+            const saveBtn = document.getElementById('saveSeedsBtn');
+            
+            list.innerHTML = '';
+            let total = 0;
+            
+            const isSuper = (userRole === 'super');
+            
+            if(isSuper) saveBtn.classList.remove('hidden');
+            else saveBtn.classList.add('hidden');
+
+            PLATFORMS.forEach(plat => {
+                const data = platformsData[plat] || { stats: {} };
+                const seedVal = parseInt(data.stats.seeds || 0);
+                total += seedVal;
+                
+                // --- MODIFICATION: Skip platform if seeds are 0 ---
+                if (seedVal === 0) return;
+                // -------------------------------------------------
+
+                const hiddenClass = (platVisibility[plat] === false) ? 'opacity-50 grayscale bg-red-50 dark:bg-red-900/20' : 'bg-white/50 dark:bg-slate-900/50';
+                
+                const row = `
+                <div class="flex items-center gap-2 ${hiddenClass} p-2 rounded-lg transition-colors">
+                    <span class="w-1/3 text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">${plat}</span>
+                    <input type="number" 
+                        id="breakdown-seed-${plat}" 
+                        value="${seedVal}" 
+                        ${isSuper ? '' : 'readonly'} 
+                        class="w-full p-2 rounded-lg text-xs font-black border-none bg-white dark:bg-slate-900 text-right outline-none focus:ring-1 focus:ring-emerald-500 ${isSuper ? '' : 'pointer-events-none'}"
+                        oninput="updateBreakdownTotal()">
+                </div>`;
+                list.insertAdjacentHTML('beforeend', row);
+            });
+            
+            totalDisplay.innerText = total;
+            modal.classList.remove('hidden');
+        }
+
+        function updateBreakdownTotal() {
+            let total = 0;
+            PLATFORMS.forEach(plat => {
+                const el = document.getElementById(`breakdown-seed-${plat}`);
+                if(el) total += parseInt(el.value || 0);
+            });
+            document.getElementById('modal-total-seeds-display').innerText = total;
+        }
+
+        async function saveSeedsBreakdown() {
+            if(userRole !== 'super') return;
+            
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            const updates = [];
+            
+            for(const plat of PLATFORMS) {
+                const el = document.getElementById(`breakdown-seed-${plat}`);
+                if(el) {
+                    const newVal = parseInt(el.value || 0);
+                    // Update local data
+                    if(!platformsData[plat].stats) platformsData[plat].stats = {};
+                    platformsData[plat].stats.seeds = newVal;
+                    
+                    // Push to Firebase (Specific Path to avoid overwriting deploys)
+                    updates.push(db.ref(`ems6/plans/${plat}/current/stats/seeds`).set(newVal));
+                }
+            }
+            
+            await Promise.all(updates);
+            
+            // Recalculate Total on UI immediately
+            let total = 0;
+            for(const plat of PLATFORMS) {
+                total += parseInt(platformsData[plat].stats.seeds || 0);
+            }
+            document.getElementById('glb_seeds').value = total;
+            
+            document.getElementById('loadingOverlay').style.display = 'none';
+            closeSeedsBreakdown();
+        }
+
+        function closeSeedsBreakdown() {
+            document.getElementById('seedsBreakdownModal').classList.add('hidden');
         }
     </script>
 </body>
