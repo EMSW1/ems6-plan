@@ -382,6 +382,12 @@
                     <button onclick="distributeMasterIPs()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white rounded-xl font-black uppercase shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2 text-xs">
                         <span></span> Distribute
                     </button>
+
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="removeMasterIPs()" class="w-full py-3 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-400 hover:to-red-600 text-white rounded-xl font-black uppercase shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2 text-xs">
+                            <span>🗑️</span> Remove from Lists
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1316,6 +1322,50 @@
             alert("Distribution Done!");
         }
 
+        function removeMasterIPs() {
+            const text = document.getElementById('masterIpList').value;
+            // Create a Set for O(1) lookup speed, normalizing input
+            let ipsToRemove = new Set(text.split('\n').map(s => s.trim()).filter(s => s));
+
+            if(ipsToRemove.size === 0) return alert("No IPs entered to remove.");
+
+            let modifiedCount = 0;
+
+            PLATFORMS.forEach(p => {
+                const chk = document.getElementById('chk-'+p);
+                const list = document.getElementById('dist-list-'+p);
+
+                if(chk && chk.checked && list) {
+                    if(platformsData[p] && platformsData[p].deploys) {
+                        const specificChks = list.querySelectorAll(`.dist-deploy-chk:checked`);
+
+                        specificChks.forEach(c => {
+                            const idx = parseInt(c.value);
+                            const deploy = platformsData[p].deploys[idx];
+                            const currentIps = (deploy.ips || "").split('\n');
+
+                            // Filter out IPs that are in the removal list
+                            const newIps = currentIps.filter(line => !ipsToRemove.has(line.trim()));
+
+                            if (newIps.length !== currentIps.length) {
+                                deploy.ips = newIps.join('\n');
+                                modifiedCount++;
+                            }
+                        });
+                        // Re-render this platform to show changes
+                        renderPlatformDeploys(p);
+                    }
+                }
+            });
+
+            if(modifiedCount > 0) {
+                checkChanges();
+                alert(`Removed IPs from ${modifiedCount} deploys.`);
+            } else {
+                alert("No matching IPs found in selected deploys.");
+            }
+        }
+
         function updateCount(plat, index) {
             const txt = document.getElementById(`ips-${plat}-${index}`).value;
             const count = txt.trim() ? txt.trim().split(/\r\n|\r|\n/).filter(l => l.trim() !== "").length : 0;
@@ -1834,11 +1884,11 @@
                 // --- SELENIUM (Type B: Scenario + Numeric Actions) ---
                 const html = `
                 <div class="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-700">
-                    <h4 class="font-black text-xs uppercase text-emerald-600 dark:text-emerald-400 mb-3 border-b border-emerald-200 dark:border-emerald-700 pb-2">SELENIUM SCRIPT</h4>
+                    <h4 class="font-black text-xs uppercase text-emerald-600 dark:text-emerald-400 mb-3 border-b border-emerald-200 dark:border-emerald-700 pb-2">SELENIUM CONFIG</h4>
                     
                     <div class="mb-4">
                         <label class="text-[10px] block mb-1">SCÉNARIO</label>
-                        <input type="text" id="sel-scenario" class="w-full p-2 rounded-lg text-xs font-bold border super-locked" value="${conf.scenario || 'Scenario -youness'}">
+                        <input type="text" id="sel-scenario" class="w-full p-2 rounded-lg text-xs font-bold border super-locked" value="${conf.scenario || '3-Random Actions v2'}">
                     </div>
 
                     <div class="bg-white/50 dark:bg-slate-900/30 p-2 rounded-xl">
@@ -2114,4 +2164,3 @@
     </script>
 </body>
 </html>
-
