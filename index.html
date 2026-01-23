@@ -152,6 +152,18 @@
         /* Toggle Switch */
         .toggle-checkbox:checked { right: 0; border-color: #10B981; }
         .toggle-checkbox:checked + .toggle-label { background-color: #10B981; }
+
+        /* Snapshot Banner */
+        .snapshot-banner {
+            background: repeating-linear-gradient(45deg, #f59e0b, #f59e0b 10px, #fbbf24 10px, #fbbf24 20px);
+            color: #451a03;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+        }
+        .dark .snapshot-banner {
+            background: repeating-linear-gradient(45deg, #7c2d12, #7c2d12 10px, #9a3412 10px, #9a3412 20px);
+            color: #ffedd5;
+            text-shadow: none;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -200,7 +212,7 @@
         <div class="flex justify-between items-center mb-4">
             <div>
                 <h3 class="text-xl font-black uppercase italic text-violet-800 dark:text-violet-400">HISTORIQUE</h3>
-                <p class="text-[10px] text-slate-500 font-bold">LAST 24 HOURS ONLY</p>
+                <p class="text-[10px] text-slate-500 font-bold">LAST 5 DAYS</p>
             </div>
             <button onclick="closeHistory()" class="w-8 h-8 flex items-center justify-center bg-slate-200 dark:bg-slate-700 rounded-full hover:bg-red-500 hover:text-white transition-all text-slate-600 dark:text-slate-300">✕</button>
         </div>
@@ -258,6 +270,11 @@
     </div>
 
     <div id="appContent" class="hidden max-w-[95%] mx-auto space-y-8 pb-24">
+        <!-- Snapshot Alert -->
+        <div id="snapshotBanner" class="hidden snapshot-banner w-full p-4 rounded-xl text-center font-black uppercase tracking-widest text-sm shadow-xl border-4 border-white/20">
+            ⚠️ <span id="snapshotDate" class="underline ml-2 text-lg"></span> ⚠️
+        </div>
+
         <!-- Header -->
         <header class="glass-card p-6 rounded-[2rem] flex justify-between items-center relative overflow-hidden group">
             <div class="relative z-10">
@@ -431,12 +448,15 @@
                     </h3>
                     <select id="bulkRulesInput" class="w-full p-2 mb-3 rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-dashed border-slate-300 dark:border-slate-700 font-bold text-center uppercase focus:border-pink-500 outline-none text-[9px]">
                         <option value="SELECT ALL IPS">SELECT ALL IPS</option>
-                        <option value="SELECT 30 IPS MAX">SELECT 30 IPS MAX</option>
-                        <option value="SELECT 50 IPS MAX">SELECT 50 IPS MAX</option>
+                        <option value="SELECT 30 IPS RANDOM MAX">SELECT 30 IPS RANDOM MAX</option>
+						<option value="SELECT 40 IPS RANDOM MAX">SELECT 40 IPS RANDOM MAX</option>
+                        <option value="SELECT 50 IPS RANDOM MAX">SELECT 50 IPS RANDOM MAX</option>
                         <option value="RANDOM ON SELECTED">RANDOM ON SELECTED</option>
                         <option value="RANDOM ON SERVER SELECTED">RANDOM ON SERVER SELECTED</option>
                         <option value="RANDOM ON CLASS">RANDOM ON CLASS</option>
+						<option value="1 IP RANDOM ON SERVER SELECTED">1 IP RANDOM ON SERVER SELECTED</option>
                         <option value="2 IPS RANDOM ON SERVER SELECTED">2 IPS RANDOM ON SERVER SELECTED</option>
+						<option value="3 IPS RANDOM ON SERVER SELECTED">3 IPS RANDOM ON SERVER SELECTED</option>
                     </select>
                      <div class="flex-1 space-y-2 mb-3 overflow-y-auto max-h-64" id="rulesManagerContainer">
                          <!-- Dynamic Platforms -->
@@ -496,6 +516,7 @@
         let platVisibility = {};
         let activeDetailsPlat = null;
         let currentPlatform = null; // Defined explicitly for logic
+        let IS_HISTORY_VIEW = false; // Strict history mode flag
 
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
@@ -509,11 +530,12 @@
             const params = new URLSearchParams(window.location.search);
             const savedRole = localStorage.getItem('ems6_role');
             const isViewMode = params.get('mode') === 'view';
+            const historyId = params.get('historyId'); // NEW: Check for History ID
 
             if (isViewMode) {
                 userRole = "viewer";
                 document.body.classList.add('viewer-mode');
-                await initApp();
+                await initApp(historyId);
             } else if(savedRole === 'admin' || savedRole === 'super') {
                 userRole = savedRole;
                 document.body.classList.add(userRole + '-mode');
@@ -539,7 +561,7 @@
             }
         }
 
-        async function initApp() {
+        async function initApp(historyId = null) {
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('appContent').classList.remove('hidden');
             document.getElementById('roleBadge').innerText = userRole.toUpperCase();
@@ -552,7 +574,7 @@
                 document.getElementById('roleBadge').classList.add(userRole === 'admin' ? 'bg-blue-600' : 'bg-slate-400');
             }
 
-            // Load Configs including Editors
+            // Load Global Configs
             const [confSnap, globalSnap, visibilitySnap, platListSnap, editorsSnap] = await Promise.all([
                 db.ref('ems6/config/boites').once('value'),
                 db.ref('ems6/global_stats').once('value'),
@@ -582,17 +604,48 @@
                 });
             }
 
-            // Initialize Data Structures for new platforms if any
+            // Initialize Data Structures
             PLATFORMS.forEach(p => {
                 if(!platformsData[p]) platformsData[p] = {};
-                if(!boitesConfig[p]) boitesConfig[p] = 100; // Default count
+                if(!boitesConfig[p]) boitesConfig[p] = 100;
                 if(platVisibility[p] === undefined) platVisibility[p] = true;
             });
 
+            // NEW: Handle History Snapshot with STRICT MODE
+            if (historyId) {
+                try {
+                    const snap = await db.ref(`ems6/history/${historyId}`).once('value');
+                    if (snap.exists()) {
+                        IS_HISTORY_VIEW = true; // Enable strict history mode
+                        
+                        const historyData = snap.val();
+                        const snapshot = historyData.snapshot || {};
+                        
+                        // CLEAR current data to prevent mixing
+                        platformsData = {};
+                        
+                        // Override platformsData with history
+                        Object.keys(snapshot).forEach(k => {
+                            if(!PLATFORMS.includes(k)) PLATFORMS.push(k);
+                            platformsData[k] = snapshot[k];
+                            platformsData[k].fromHistory = true;
+                        });
+                        
+                        // Show Banner with TIME
+                        document.getElementById('snapshotBanner').classList.remove('hidden');
+                        document.getElementById('snapshotDate').innerHTML = `UPDATE TIME : <span class="font-black text-xl ml-2">${historyData.dateString || 'Unknown Date'}</span>`;
+                        
+                    } else {
+                        alert("Historical snapshot not found. Loading current data.");
+                    }
+                } catch (e) {
+                    console.error("Error loading history snapshot", e);
+                }
+            }
+
             renderAllPlatforms();
-            generateDynamicAdminTools(); // Generate Checkboxes based on PLATFORMS
+            generateDynamicAdminTools();
             
-            // Clean old history on init if Admin
             if(userRole !== 'viewer') cleanOldHistory();
         }
 
@@ -649,13 +702,19 @@
                 // SKIP IF PLATFORM IS HIDDEN (DISABLED)
                 if (platVisibility[plat] === false) return;
 
+                // Requirement: Show SEEDS/day in Distributor
+                const seedsDay = platformsData[plat]?.stats?.nbrseedsperday || '0';
+
                 // Modified structure to include deploy list container
                 const html = `
                 <div class="flex flex-col bg-white/5 rounded-lg mb-1">
                     <div class="flex items-center justify-between hover:bg-white/50 p-1 rounded transition-colors">
                         <label class="flex items-center gap-2 cursor-pointer flex-1">
                             <input type="checkbox" id="chk-${plat}" onchange="toggleDistPlatform('${plat}')" class="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 border-gray-300">
-                            <span class="font-bold text-xs">${plat} <span id="dist-count-${plat}" class="text-[9px] text-slate-400 ml-1 font-normal opacity-75">(0)</span></span>
+                            <span class="font-bold text-xs">${plat} 
+                                <span class="text-[9px] text-emerald-600 dark:text-emerald-400 ml-1 font-black">[${seedsDay}/day]</span>
+                                <span id="dist-count-${plat}" class="text-[9px] text-slate-400 ml-1 font-normal opacity-75">(0)</span>
+                            </span>
                         </label>
                         <div class="flex gap-1 ml-2">
                              <button onclick="quickRemoveLastDeploy('${plat}')" class="w-6 h-6 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-600 rounded-md font-black shadow-sm transition-colors" title="Remove Last">-</button>
@@ -715,15 +774,17 @@
 
             // 1. First Pass: Fetch Data and Calculate Totals (Including Hidden)
             for (const plat of PLATFORMS) {
-                // Fetch data for ALL platforms, even hidden ones - UNLESS we have local modification
-                // If platformsData[plat].deploys is populated (e.g. from history load), don't fetch from DB again
-                // BUT initApp calls this, so initially it's empty.
-                
                 let data = platformsData[plat];
                 
-                // If data is "empty" (init state), fetch it. 
-                // We check if it has properties other than stats/deploys init
-                if (!data.updatedAt && !data.fromHistory) {
+                // --- STRICT HISTORY CHECK ---
+                // If in history mode and we have no data for this platform, DO NOT FETCH LIVE.
+                if (!data && IS_HISTORY_VIEW) {
+                    platformsData[plat] = { deploys: [], stats: {}, filter: "", isMissing: true }; // Mark as missing
+                    continue;
+                }
+
+                // If data is "empty" (init state) AND not from history snapshot AND NOT HISTORY VIEW, fetch it. 
+                if ((!data || (!data.updatedAt && !data.fromHistory)) && !IS_HISTORY_VIEW) {
                     const snap = await db.ref(`ems6/plans/${plat}/current`).once('value');
                     const dbData = snap.val() || { deploys: [], stats: {}, filter: "" };
                     
@@ -736,16 +797,18 @@
                 }
                 
                 // --- SNAPSHOT FOR COMPARISON ---
-                if (!originalPlatformsData[plat]) {
+                if (!originalPlatformsData[plat] && data) {
                     originalPlatformsData[plat] = JSON.parse(JSON.stringify(data));
                 }
                 
-                if(!firstEditor && data.editor) firstEditor = data.editor;
+                if(data && !firstEditor && data.editor) firstEditor = data.editor;
 
-                // Accumulate Globals (From ALL platforms)
-                totalSeeds += parseInt(data.stats.seeds || 0);
-                totalQuality += parseInt(data.stats.quality || 0);
-                totalPaused += parseInt(data.stats.paused || 0);
+                if (data && !data.isMissing) {
+                    // Accumulate Globals (From ALL platforms)
+                    totalSeeds += parseInt(data.stats?.seeds || 0);
+                    totalQuality += parseInt(data.stats?.quality || 0);
+                    totalPaused += parseInt(data.stats?.paused || 0);
+                }
             }
 
             // 2. Second Pass: Render Only Visible Platforms
@@ -755,6 +818,19 @@
                 // Visibility Logic for UI Rendering Only
                 if (userRole !== 'super' && platVisibility[plat] === false) continue;
                 if (targetPlat && plat !== targetPlat) continue;
+
+                // Handle Missing History Data
+                if (data && data.isMissing) {
+                     const html = `
+                     <div class="platform-section opacity-50">
+                        <h2 class="plat-title text-4xl mb-4">${plat}</h2>
+                        <div class="glass-card p-10 rounded-[2rem] text-center">
+                            <p class="text-slate-500 font-bold italic">DATA NOT AVAILABLE IN SNAPSHOT</p>
+                        </div>
+                     </div>`;
+                     container.insertAdjacentHTML('beforeend', html);
+                     continue;
+                }
 
                 // Build HTML Structure for Platform
                 const isHidden = !platVisibility[plat];
@@ -811,6 +887,7 @@
                                 <div class="flex gap-2">
                                     <input type="text" id="filter-${plat}" value="${escapeHtml(data.filter || '')}" oninput="checkChanges(); updateFilterPreviews('${plat}', this.value)" class="w-full p-2 border-2 border-blue-500/20 rounded-xl font-black text-blue-600 bg-blue-500/5 text-center uppercase focus:border-blue-500 outline-none" placeholder="SEARCH...">
                                     <button onclick="downloadAllIPs('${plat}', this)" class="viewer-only-btn hidden bg-purple-600 text-white px-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all">DOWNLOAD ALL IPS</button>
+                                    <button onclick="openAllDeploys('${plat}')" class="viewer-only-btn hidden bg-emerald-600 text-white px-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all">OPEN ALL DEPLOYS</button>
                                     <div class="flex items-center gap-1 viewer-only-btn hidden">
                                         <button onclick="copyAllIDs('${plat}', this)" class="bg-blue-600 text-white px-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all h-full">COPY ALL IDs</button>
                                         <div class="flex flex-col gap-0.5 ml-1">
@@ -852,6 +929,8 @@
                 globalEditor = firstEditor; // Update global var for consistency
             }
             
+            generateDynamicAdminTools(); // Added: Refresh admin tools to show updated Seeds/Day
+            
             // Update Distributor Counts & ID/Batch/Rules Selectors
             updateDistributorCounts();
             renderAllSelectors();
@@ -866,6 +945,10 @@
         function renderPlatformDeploys(plat) {
             const container = document.getElementById(`grid-${plat}`);
             const distDisplay = document.getElementById(`dist-${plat}`);
+            
+            // Safety check for missing data in History Mode
+            if (!platformsData[plat] || platformsData[plat].isMissing) return;
+
             const savedDeploys = platformsData[plat].deploys || [];
             const num = savedDeploys.length;
             
@@ -888,6 +971,8 @@
                 
                 const d = savedDeploys[i] || { id: '', batch: '10/3000P', rules: 'SELECT ALL IPS', ips: '' };
                 const ipCount = d.ips ? d.ips.trim().split(/\r\n|\r|\n/).filter(l => l.trim() !== "").length : 0;
+                
+                const deployUrl = getDeployUrl(plat, d.id);
 
                 const cardHtml = `
                 <div class="deploy-card glass-card p-4 rounded-[1.5rem] relative group/card">
@@ -898,6 +983,7 @@
                             <span class="bg-slate-900 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase italic">D${i+1}</span>
                             <button onclick="downloadOneIPs('${plat}', ${i})" class="viewer-only-btn hidden bg-purple-600 hover:bg-purple-500 text-white text-[9px] px-2 py-1 rounded-full font-bold uppercase shadow-sm active:scale-95 transition-all">DOWNLOAD IPS</button>
                             <button onclick="copyOneIPs('${plat}', ${i}, this)" class="viewer-only-btn hidden bg-blue-600 text-white text-[9px] px-2 py-1 rounded-full font-bold uppercase shadow-sm active:scale-95 transition-all">COPY IPS</button>
+                            ${deployUrl ? `<a href="${deployUrl}" target="_blank" class="viewer-only-btn hidden bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] px-2 py-1 rounded-full font-bold uppercase shadow-sm active:scale-95 transition-all no-underline">OPEN</a>` : ''}
                             <span class="text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20 count-${plat}-${i}">${ipCount} IPS</span>
                         </div>
                         <span class="text-blue-600 dark:text-blue-400 font-black text-[10px] bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">${bCount} Boites</span>
@@ -916,7 +1002,7 @@
                         <div>
                             <label class="block text-[9px] font-black uppercase text-slate-500">Rules</label>
                             <select ${isReadonly} onchange="updateDeployData('${plat}', ${i}, 'rules', this.value)" class="inp-rules w-full p-2 border-none rounded-xl text-[9px] font-bold uppercase outline-none cursor-pointer">
-                                ${['SELECT ALL IPS','SELECT 30 IPS MAX','SELECT 50 IPS MAX','RANDOM ON SELECTED','RANDOM ON SERVER SELECTED','RANDOM ON CLASS','2 IPS RANDOM ON SERVER SELECTED'].map(o => `<option value="${o}" ${d.rules===o?'selected':''}>${o}</option>`).join('')}
+                                ${['SELECT ALL IPS','SELECT 30 IPS RANDOM MAX','SELECT 40 IPS RANDOM MAX','SELECT 50 IPS RANDOM MAX','RANDOM ON SELECTED','RANDOM ON SERVER SELECTED','RANDOM ON CLASS','1 IP RANDOM ON SERVER SELECTED','2 IPS RANDOM ON SERVER SELECTED','3 IPS RANDOM ON SERVER SELECTED'].map(o => `<option value="${o}" ${d.rules===o?'selected':''}>${o}</option>`).join('')}
                             </select>
                         </div>
                     </div>
@@ -929,7 +1015,6 @@
             distDisplay.innerText = dist.join(' | ');
         }
         
-        // --- NEW FUNCTION: RENDER VIEWER TABLE ---
         function renderViewerTable() {
             const container = document.getElementById('viewerTableContainer');
             if(!container) return;
@@ -944,10 +1029,12 @@
                  if (platVisibility[plat] === false) return;
                  if (targetPlat && plat !== targetPlat) return;
                  
+                 // Skip missing data in history mode
+                 if (platformsData[plat] && platformsData[plat].isMissing) return;
+
                  const deploys = platformsData[plat].deploys || [];
                  if(deploys.length === 0) return;
                  
-                 // Recalculate Boites per deploy
                  const total = boitesConfig[plat] || 100;
                  const num = deploys.length;
                  const base = Math.floor(total / num);
@@ -959,15 +1046,14 @@
                         <span class="w-2 h-8 bg-blue-500 rounded-full"></span>
                         ${plat} DEPLOYS
                      </h3>
-                     <!-- UPDATED: Flex container with horizontal scrolling, nowrap -->
                      <div class="flex overflow-x-auto gap-4 pb-4">`;
                  
                  deploys.forEach((d, i) => {
                      const bCount = base + (i < rem ? 1 : 0);
                      const ips = d.ips || "";
                      const ipCount = ips.split(/\r\n|\r|\n/).filter(x => x.trim()).length;
-                     
-                     // Added min-width to ensure cards don't shrink and force scroll
+                     const deployUrl = getDeployUrl(plat, d.id);
+
                      html += `
                      <div class="min-w-[300px] w-[300px] bg-white/50 dark:bg-slate-900/50 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 flex flex-col shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
                          <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600 opacity-50"></div>
@@ -996,10 +1082,13 @@
                             </div>
                          </div>
                          
-                         <div class="bg-slate-100 dark:bg-black/20 rounded-xl p-3 border border-slate-200 dark:border-slate-800/50 flex-1 flex flex-col">
+                         <div class="bg-slate-100 dark:bg-black/20 rounded-xl p-3 border border-slate-200 dark:border-slate-800/50 flex-1 flex flex-col mb-3">
                             <span class="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">LES IPS</span>
-                            <div class="font-mono text-[10px] text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre select-all overflow-x-auto max-h-96 overflow-y-auto">${ips.trim() || '<span class="italic opacity-50">No IPs</span>'}</div>
+                            <div class="font-mono text-[10px] text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre select-all overflow-x-auto max-h-48 overflow-y-auto">${ips.trim() || '<span class="italic opacity-50">No IPs</span>'}</div>
                          </div>
+                         
+                         ${deployUrl ? `<a href="${deployUrl}" target="_blank" class="block w-full text-center py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-[10px] uppercase shadow-lg transform active:scale-95 transition-all">OPEN DEPLOY</a>` : ''}
+
                      </div>`;
                  });
                  
@@ -1408,14 +1497,11 @@
             // Identify visible platforms
             const platsToSave = PLATFORMS.filter(p => userRole === 'super' || platVisibility[p]);
             
-            // --- HISTORY LOGIC PREPARATION ---
-            // We want to capture the "Snapshot" of modifications made at this time
-            // Only for platforms that actually changed.
+            // --- HISTORY LOGIC ---
             let historySnapshot = {}; 
             let fullGlobalChangesLog = [];
             let anyRealChanges = false;
-            // ---------------------------------
-
+            
             // Loop through all platforms
             for (const plat of platsToSave) {
                 const currentPlatform = plat;
@@ -1485,7 +1571,17 @@
                      }
                 }
                 
-                // Create formatted date: DD/MM/YYYY HHhMM
+                // --- FULL SNAPSHOT LOGIC ---
+                // We save the state of ALL visible platforms if ANY change occurred in this batch.
+                // This ensures the snapshot is complete for the "time travel" link.
+                historySnapshot[plat] = {
+                    deploys: JSON.parse(JSON.stringify(deploys)),
+                    filter: filter,
+                    stats: JSON.parse(JSON.stringify(stats)),
+                    detailsConfig: JSON.parse(JSON.stringify(detailsConfig)),
+                    editor: editorName
+                };
+
                 const now = new Date();
                 const day = String(now.getDate()).padStart(2, '0');
                 const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1494,22 +1590,13 @@
                 const minutes = String(now.getMinutes()).padStart(2, '0');
                 const formattedDate = `${day}/${month}/${year} ${hours}h${minutes}`;
 
-                // --- ADD TO HISTORY SNAPSHOT IF CHANGED ---
+                // --- ADD TO LOG IF CHANGED ---
                 if (hasRealChanges) {
                     anyRealChanges = true;
-                    // We save the NEW state as a snapshot for this platform
-                    historySnapshot[plat] = {
-                        deploys: JSON.parse(JSON.stringify(deploys)),
-                        filter: filter,
-                        stats: JSON.parse(JSON.stringify(stats)),
-                        detailsConfig: JSON.parse(JSON.stringify(detailsConfig)),
-                        editor: editorName
-                    };
                     fullGlobalChangesLog.push({ plat: plat, changes: logChanges });
                 }
-                // -----------------------------------------
 
-                // Save to Firebase
+                // Save to Firebase (Current State)
                 await db.ref(`ems6/plans/${currentPlatform}/current`).set({ 
                     deploys, 
                     filter, 
@@ -1518,22 +1605,52 @@
                     editor: editorName, 
                     updatedAt: formattedDate 
                 });
+            }
+            
+            // --- SAVE TO HISTORY FIRST TO GET ID ---
+            let historyId = null;
+            if (anyRealChanges && sendNotif) {
+                const now = new Date();
+                const historyRef = db.ref('ems6/history').push(); // Generate ID first
+                historyId = historyRef.key;
+                
+                const historyEntry = {
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    dateString: now.toLocaleString('en-GB', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' }),
+                    editor: editorName,
+                    summary: fullGlobalChangesLog,
+                    snapshot: historySnapshot // Save Full Snapshot
+                };
+                await historyRef.set(historyEntry);
+                cleanOldHistory();
+            }
 
-                // Send Telegram (ONLY if sendNotif is true AND actual Deploy changes detected)
-                if (sendNotif && hasRealChanges) {
-                    // Dynamic URL Logic: first letter + lowercased (WEB -> ems6)
-                    const platKey = currentPlatform.charAt(0).toLowerCase();
+            // --- SEND TELEGRAM (LOOP AGAIN) ---
+            if (sendNotif && anyRealChanges) {
+                for (const plat of platsToSave) {
+                    const changesForPlat = fullGlobalChangesLog.find(x => x.plat === plat);
+                    if (!changesForPlat) continue;
+
+                    // Dynamic URL Logic:
                     const platformUrl = `https://ems6-plan.pages.dev/`;
-                    const viewLink = `${platformUrl}?mode=view&plat=${encodeURIComponent(currentPlatform)}&target=true`;
+                    let viewLink = `${platformUrl}?mode=view&plat=${encodeURIComponent(plat)}&target=true`;
                     
-                    const safePlat = escapeHtml(currentPlatform);
+                    // NEW: Append History ID for Time Travel
+                    if (historyId) {
+                        viewLink += `&historyId=${historyId}`;
+                    }
+
+                    const safePlat = escapeHtml(plat);
                     const safeEditor = escapeHtml(editorName);
+                    
+                    const deploys = platformsData[plat].deploys || [];
+                    const originalDeploys = originalPlatformsData[plat].deploys || [];
 
                     let telegramMsg = "";
-                    if (deploys.length === 0 && oldDeploys.length > 0) {
+                    if (deploys.length === 0 && originalDeploys.length > 0) {
                         telegramMsg = `⚠️ <b>STOPPED: #${safePlat}</b>\n` + `👤 <b>BY : ${safeEditor}</b>\n` + `━━━━━━━━━━━━━━━\n` + `🚫 <b>ALL DEPLOYS REMOVED</b>\n` + `━━━━━━━━━━━━━━━\n` + `🔗 <a href="${viewLink}"><b>VIEW PLAN</b></a>`;
                     } else {
-                        const changesText = logChanges.length > 0 ? logChanges.map(c => escapeHtml(c)).join('\n') : "• Saved by user";
+                        const changesText = changesForPlat.changes.length > 0 ? changesForPlat.changes.map(c => escapeHtml(c)).join('\n') : "• Saved by user";
                         telegramMsg = `🔄 <b>#${safePlat} UPDATE</b>\n` + `👤 <b>BY: ${safeEditor}</b>\n` + `📝 <b>CHANGES:</b>\n` + `${changesText}\n` + `━━━━━━━━━━━━━━━\n` + `🔗 <b><a href="${viewLink}">VIEW PLAN</a></b>`;
                     }
                     
@@ -1543,34 +1660,10 @@
                             headers: { 'Content-Type': 'application/json' }, 
                             body: JSON.stringify({ chat_id: CONFIG.telegram.chatId, text: telegramMsg, parse_mode: 'HTML' }) 
                         });
-                        if(!resp.ok) {
-                            const errData = await resp.json();
-                            console.error('Telegram Error', errData);
-                            alert('Telegram Error: ' + (errData.description || 'Unknown'));
-                        }
-                    } catch (e) { 
-                        console.error("Telegram Error:", e);
-                        alert("Telegram Connection Error: " + e.message);
-                    }
+                        if(!resp.ok) console.error('Telegram Error', await resp.json());
+                    } catch (e) { console.error("Telegram Error:", e); }
                 }
-                
-                originalPlatformsData[currentPlatform] = JSON.parse(JSON.stringify({ deploys, filter, stats, detailsConfig, editor: editorName }));
             }
-            
-            // --- SAVE TO HISTORY (LAST 24h) ---
-            if (anyRealChanges && sendNotif) {
-                const now = new Date();
-                const historyEntry = {
-                    timestamp: firebase.database.ServerValue.TIMESTAMP,
-                    dateString: now.toLocaleString('en-GB', { day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit' }),
-                    editor: editorName,
-                    summary: fullGlobalChangesLog,
-                    snapshot: historySnapshot // Only save Modified Platforms
-                };
-                await db.ref('ems6/history').push(historyEntry);
-                cleanOldHistory(); // Clean up old entries
-            }
-            // ----------------------------------
             
             setTimeout(() => { location.reload(); }, 500);
         }
@@ -1578,8 +1671,9 @@
         // --- HISTORY FUNCTIONS ---
         
         async function cleanOldHistory() {
-            // Remove entries older than 24 hours (86400000 ms)
-            const cutoff = Date.now() - 86400000;
+            // Remove entries older than 5 days
+            // 5 * 24 * 60 * 60 * 1000 = 432000000 ms
+            const cutoff = Date.now() - 432000000;
             const ref = db.ref('ems6/history');
             
             try {
@@ -1601,12 +1695,12 @@
             list.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold italic animate-pulse">Loading modifications...</div>';
             
             try {
-                // Fetch last 50 entries (should cover 24h usually)
+                // Fetch last 50 entries
                 const snap = await db.ref('ems6/history').orderByChild('timestamp').limitToLast(50).once('value');
                 
                 list.innerHTML = '';
                 if(!snap.exists()) {
-                    list.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold italic">No history found for last 24h.</div>';
+                    list.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold italic">No history found for last 5 days.</div>';
                     return;
                 }
 
@@ -1697,16 +1791,6 @@
              saveAll(false); 
         }
 
-        async function sendTelegramMsg(text) {
-             try {
-                await fetch(`https://api.telegram.org/bot${CONFIG.telegram.token}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: CONFIG.telegram.chatId, text: text, parse_mode: 'HTML' })
-                });
-             } catch(e) { console.error(e); }
-        }
-
         // --- Helper Functions ---
         function checkAccess() {
             const k = document.getElementById('accessKey').value;
@@ -1756,6 +1840,47 @@
             });
             if(count === 0) alert("No IPs found.");
         }
+        
+        function getDeployUrl(plat, id) {
+            if (!id) return null;
+            const strId = String(id).trim();
+            if (!strId) return null;
+
+            if (['WEB', 'AUTOMAT'].includes(plat)) {
+                return `http://95.216.72.6:90/deploy/reporting?action=test&id=${strId}`;
+            } else if (plat === 'SELENIUM') {
+                return `http://95.216.72.6:90/deployment/deploy?action=test&id=${strId}`;
+            }
+            return null;
+        }
+
+        function openAllDeploys(plat) {
+            const deploys = platformsData[plat].deploys || [];
+            const validUrls = [];
+
+            // 1. Gather all URLs first
+            for(const d of deploys) {
+                const u = getDeployUrl(plat, d.id);
+                if(u) validUrls.push(u);
+            }
+
+            if(validUrls.length === 0) {
+                alert("No valid Deploy IDs found to open.");
+                return;
+            }
+
+            // 2. Open all in a synchronous loop
+            // Note: Users must allow popups for this site if > 1 tab
+            let opened = 0;
+            for(let i = 0; i < validUrls.length; i++) {
+                const w = window.open(validUrls[i], '_blank');
+                if(w) opened++;
+            }
+            
+            if(opened < validUrls.length) {
+                alert("⚠️ Some tabs were blocked by your browser.\n\nPlease click the lock/popup icon in your URL bar and select 'Always allow popups' for this site to open all links at once.");
+            }
+        }
 
         function downloadFile(content, filename) {
             const a = document.createElement('a');
@@ -1800,7 +1925,7 @@
             generateDynamicAdminTools();
         }
 
-        // PLATFORM DETAILS MODAL (Updated for Dynamic Actions)
+        // PLATFORM DETAILS MODAL
         function openPlatformDetails(plat) {
             activeDetailsPlat = plat;
             document.getElementById('detailModalTitle').innerText = `${plat} DETAILS`;
@@ -1888,7 +2013,7 @@
                     
                     <div class="mb-4">
                         <label class="text-[10px] block mb-1">SCÉNARIO</label>
-                        <input type="text" id="sel-scenario" class="w-full p-2 rounded-lg text-xs font-bold border super-locked" value="${conf.scenario || '3-Random Actions v2'}">
+                        <input type="text" id="sel-scenario" class="w-full p-2 rounded-lg text-xs font-bold border super-locked" value="${conf.scenario || 'EMSW_V1'}">
                     </div>
 
                     <div class="bg-white/50 dark:bg-slate-900/30 p-2 rounded-xl">
@@ -1945,7 +2070,6 @@
 
         function renderDetailActionsList(containerId, actions, type, isSuper) {
             // type = 'bool' or 'numeric'
-            // MODIFICATION: Add disabled logic if not super admin
             const disabledAttr = isSuper ? '' : 'disabled';
             const cursorClass = isSuper ? 'cursor-pointer' : 'cursor-default';
             const valReadOnly = isSuper ? '' : 'readonly';
@@ -2024,9 +2148,6 @@
             if (p === 'SELENIUM') {
                 newConf.scenario = document.getElementById('sel-scenario').value;
                 newConf.seleniumActions = scrapeDetailActions('selenium-actions-container', 'numeric');
-                
-                // Clear old legacy keys to keep DB clean (optional)
-                // delete newConf.notSpam; delete newConf.read; etc.
             } else {
                 newConf.spamVal = document.getElementById('web-spam-val').value;
                 newConf.inboxVal = document.getElementById('web-inbox-val').value;
@@ -2090,15 +2211,54 @@
 
             PLATFORMS.forEach(plat => {
                 const data = platformsData[plat] || { stats: {} };
+                const hiddenClass = (platVisibility[plat] === false) ? 'opacity-50 grayscale bg-red-50 dark:bg-red-900/20' : 'bg-white/50 dark:bg-slate-900/50';
+
+                // --- SPECIAL HANDLING FOR SELENIUM (CHROME / BRAVE) ---
+                if (plat === 'SELENIUM') {
+                    const seedsChrome = parseInt(data.stats.seeds_chrome || 0);
+                    const seedsBrave = parseInt(data.stats.seeds_brave || 0);
+                    
+                    // Show Chrome if > 0 or if super admin
+                    if (seedsChrome > 0 || isSuper) {
+                        const row = `
+                        <div class="flex items-center gap-2 ${hiddenClass} p-2 rounded-lg transition-colors">
+                            <span class="w-1/3 text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">CHROME</span>
+                            <input type="number" 
+                                id="breakdown-seed-selenium-chrome" 
+                                value="${seedsChrome}" 
+                                ${isSuper ? '' : 'readonly'} 
+                                class="w-full p-2 rounded-lg text-xs font-black border-none bg-white dark:bg-slate-900 text-right outline-none focus:ring-1 focus:ring-emerald-500 ${isSuper ? '' : 'pointer-events-none'}"
+                                oninput="updateBreakdownTotal()">
+                        </div>`;
+                        list.insertAdjacentHTML('beforeend', row);
+                    }
+                    
+                    // Show Brave if > 0 or if super admin
+                    if (seedsBrave > 0 || isSuper) {
+                        const row = `
+                        <div class="flex items-center gap-2 ${hiddenClass} p-2 rounded-lg transition-colors">
+                            <span class="w-1/3 text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">BRAVE</span>
+                            <input type="number" 
+                                id="breakdown-seed-selenium-brave" 
+                                value="${seedsBrave}" 
+                                ${isSuper ? '' : 'readonly'} 
+                                class="w-full p-2 rounded-lg text-xs font-black border-none bg-white dark:bg-slate-900 text-right outline-none focus:ring-1 focus:ring-emerald-500 ${isSuper ? '' : 'pointer-events-none'}"
+                                oninput="updateBreakdownTotal()">
+                        </div>`;
+                        list.insertAdjacentHTML('beforeend', row);
+                    }
+                    
+                    total += (seedsChrome + seedsBrave);
+                    return; // Skip default processing for Selenium
+                }
+
+                // --- DEFAULT HANDLING FOR OTHER PLATFORMS ---
                 const seedVal = parseInt(data.stats.seeds || 0);
                 total += seedVal;
                 
-                // --- MODIFICATION: Skip platform if seeds are 0 ---
-                if (seedVal === 0) return;
-                // -------------------------------------------------
+                // Skip platform if seeds are 0, unless user is Super Admin
+                if (seedVal === 0 && !isSuper) return;
 
-                const hiddenClass = (platVisibility[plat] === false) ? 'opacity-50 grayscale bg-red-50 dark:bg-red-900/20' : 'bg-white/50 dark:bg-slate-900/50';
-                
                 const row = `
                 <div class="flex items-center gap-2 ${hiddenClass} p-2 rounded-lg transition-colors">
                     <span class="w-1/3 text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">${plat}</span>
@@ -2119,8 +2279,15 @@
         function updateBreakdownTotal() {
             let total = 0;
             PLATFORMS.forEach(plat => {
-                const el = document.getElementById(`breakdown-seed-${plat}`);
-                if(el) total += parseInt(el.value || 0);
+                if (plat === 'SELENIUM') {
+                    const elChrome = document.getElementById(`breakdown-seed-selenium-chrome`);
+                    const elBrave = document.getElementById(`breakdown-seed-selenium-brave`);
+                    if(elChrome) total += parseInt(elChrome.value || 0);
+                    if(elBrave) total += parseInt(elBrave.value || 0);
+                } else {
+                    const el = document.getElementById(`breakdown-seed-${plat}`);
+                    if(el) total += parseInt(el.value || 0);
+                }
             });
             document.getElementById('modal-total-seeds-display').innerText = total;
         }
@@ -2133,15 +2300,34 @@
             const updates = [];
             
             for(const plat of PLATFORMS) {
-                const el = document.getElementById(`breakdown-seed-${plat}`);
-                if(el) {
-                    const newVal = parseInt(el.value || 0);
-                    // Update local data
-                    if(!platformsData[plat].stats) platformsData[plat].stats = {};
-                    platformsData[plat].stats.seeds = newVal;
+                if(!platformsData[plat].stats) platformsData[plat].stats = {};
+
+                if (plat === 'SELENIUM') {
+                    const elChrome = document.getElementById(`breakdown-seed-selenium-chrome`);
+                    const elBrave = document.getElementById(`breakdown-seed-selenium-brave`);
                     
-                    // Push to Firebase (Specific Path to avoid overwriting deploys)
-                    updates.push(db.ref(`ems6/plans/${plat}/current/stats/seeds`).set(newVal));
+                    let valChrome = elChrome ? parseInt(elChrome.value || 0) : parseInt(platformsData[plat].stats.seeds_chrome || 0);
+                    let valBrave = elBrave ? parseInt(elBrave.value || 0) : parseInt(platformsData[plat].stats.seeds_brave || 0);
+
+                    // Update local object
+                    platformsData[plat].stats.seeds_chrome = valChrome;
+                    platformsData[plat].stats.seeds_brave = valBrave;
+                    
+                    // Total Seeds for Selenium is sum of both
+                    const newTotal = valChrome + valBrave;
+                    platformsData[plat].stats.seeds = newTotal;
+
+                    // Push specific paths
+                    updates.push(db.ref(`ems6/plans/${plat}/current/stats/seeds_chrome`).set(valChrome));
+                    updates.push(db.ref(`ems6/plans/${plat}/current/stats/seeds_brave`).set(valBrave));
+                    updates.push(db.ref(`ems6/plans/${plat}/current/stats/seeds`).set(newTotal));
+                } else {
+                    const el = document.getElementById(`breakdown-seed-${plat}`);
+                    if(el) {
+                        const newVal = parseInt(el.value || 0);
+                        platformsData[plat].stats.seeds = newVal;
+                        updates.push(db.ref(`ems6/plans/${plat}/current/stats/seeds`).set(newVal));
+                    }
                 }
             }
             
