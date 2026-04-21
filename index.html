@@ -435,6 +435,19 @@
                         </div>
                     </div>
 
+                    <!-- IPS UNIQUE OPTION -->
+                    <label id="ips-unique-container" class="flex items-center justify-between p-3 rounded-xl border-2 border-dashed border-emerald-400/50 bg-emerald-50/50 dark:bg-emerald-900/10 cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all group">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 tracking-wide">IPS UNIQUE</span>
+                            <span class="text-[9px] text-slate-500 dark:text-slate-400 font-medium" id="ips-unique-desc">Duplicates allowed</span>
+                        </div>
+                        <div class="relative">
+                            <input type="checkbox" id="ips-unique-toggle" onchange="toggleIpsUniqueDesc()" class="sr-only peer">
+                            <div class="w-10 h-5 bg-slate-300 dark:bg-slate-700 peer-checked:bg-emerald-500 rounded-full transition-colors duration-200 peer-focus:ring-2 peer-focus:ring-emerald-400"></div>
+                            <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-5"></div>
+                        </div>
+                    </label>
+
                     <button onclick="distributeMasterIPs()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white rounded-xl font-black uppercase shadow-lg transform hover:scale-105 transition-all flex items-center justify-center gap-2 text-xs">
                         <span></span> Distribute
                     </button>
@@ -573,6 +586,9 @@
         let activeDetailsPlat = null;
         let currentPlatform = null; // Defined explicitly for logic
         let IS_HISTORY_VIEW = false; // Strict history mode flag
+        let realtimeListenersActive = false;
+
+        let isDirty = false;
 
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
@@ -649,7 +665,7 @@
 
             // Initialize Editors List
             if(editorsSnap.exists()) EDITOR_NAMES = editorsSnap.val();
-            else EDITOR_NAMES = ['ISMAIL ABERAOUZ']; // Default
+            else EDITOR_NAMES = ['ALLAL GASMI']; // Default
             renderEditorsList();
 
             if(globalSnap.exists()) {
@@ -913,10 +929,10 @@
                     filterPreviewHtml = `
                     <div class="viewer-only-box mt-3 p-3 bg-slate-200 dark:bg-slate-800 rounded-xl border border-dashed border-slate-400 dark:border-slate-600 select-all">
                         <div class="font-mono text-[10px] text-slate-800 dark:text-slate-200">
-                            <strong>spam :</strong> newer_than:2h <span id="preview-spam-${plat}">${escapeHtml(data.filter || '')}</span>
+                            <strong>spam :</strong> newer_than:1d <span id="preview-spam-${plat}">${escapeHtml(data.filter || '')}</span>
                         </div>
                         <div class="font-mono text-[10px] text-slate-800 dark:text-slate-200 mt-1">
-                            <strong>inbox :</strong> is:unread newer_than:2h <span id="preview-inbox-${plat}">${escapeHtml(data.filter || '')}</span>
+                            <strong>inbox :</strong> is:unread newer_than:1d <span id="preview-inbox-${plat}">${escapeHtml(data.filter || '')}</span>
                         </div>
                     </div>`;
                 }
@@ -927,7 +943,7 @@
                     <div class="flex flex-wrap items-center gap-4 mb-4">
                         <h2 class="plat-title text-4xl">${plat}</h2>
                         ${boxInput} <span class="text-xs font-bold text-slate-500">BOITES</span>
-                        ${lastUpdate ? `<div class="px-3 py-1 rounded-full bg-slate-200/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 text-[10px] font-black border border-slate-300/50 dark:border-slate-700/50 flex items-center gap-1 shadow-sm"><span>🕒</span>LAST UPDATE : ${lastUpdate}</div>` : ''}
+                        ${lastUpdate ? `<div class="last-update-badge px-3 py-1 rounded-full bg-slate-200/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 text-[10px] font-black border border-slate-300/50 dark:border-slate-700/50 flex items-center gap-1 shadow-sm">🕒 LAST UPDATE : ${lastUpdate}</div>` : ''}
                         <button onclick="openPlatformDetails('${plat}')" class="admin-only bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-3 py-1 rounded-full font-black uppercase shadow transition-all">DETAILS</button>
                     </div>
 
@@ -995,6 +1011,9 @@
 
             // NEW: Render the Viewer Table at bottom
             if(userRole === 'viewer') renderViewerTable();
+
+            // Start real-time listeners after first full render
+            setupRealtimeListeners();
 
             document.getElementById('loadingOverlay').style.display = 'none';
         }
@@ -1462,10 +1481,31 @@
             }
         }
 
+        function toggleIpsUniqueDesc() {
+            const chk = document.getElementById('ips-unique-toggle');
+            const desc = document.getElementById('ips-unique-desc');
+            const container = document.getElementById('ips-unique-container');
+            if (chk.checked) {
+                desc.innerText = 'IPs deduplicated before distribute';
+                container.classList.add('border-emerald-500', 'bg-emerald-50');
+                container.classList.remove('border-emerald-400/50');
+            } else {
+                desc.innerText = 'Duplicates allowed';
+                container.classList.remove('border-emerald-500', 'bg-emerald-50');
+                container.classList.add('border-emerald-400/50');
+            }
+        }
+
         // --- DISTRIBUTOR LOGIC ---
         function distributeMasterIPs() {
             const text = document.getElementById('masterIpList').value;
             let ips = text.split('\n').map(s => s.trim()).filter(s => s);
+
+            // IPS UNIQUE: deduplicate before distributing
+            const isUnique = document.getElementById('ips-unique-toggle')?.checked;
+            if (isUnique) {
+                ips = [...new Set(ips)];
+            }
 
             // NEW: Get the action type (overwrite vs append)
             const actionType = document.querySelector('input[name="distAction"]:checked').value;
@@ -1590,6 +1630,7 @@
 
         function checkChanges() {
             if(userRole === 'viewer') return;
+            isDirty = true;
             document.getElementById('saveBtn').disabled = false;
             document.getElementById('actionToolbar').classList.remove('hidden');
         }
@@ -1850,6 +1891,11 @@
                 }
             }
             
+            isDirty = false;
+            const toolbar = document.getElementById('actionToolbar');
+            if (toolbar) toolbar.classList.add('hidden');
+            const saveBtnEl = document.getElementById('saveBtn');
+            if (saveBtnEl) saveBtnEl.disabled = true;
             setTimeout(() => { location.reload(); }, 500);
         }
 
@@ -2557,6 +2603,97 @@
 
         function closeSeedsBreakdown() {
             document.getElementById('seedsBreakdownModal').classList.add('hidden');
+        }
+
+        // --- REAL-TIME SYNC ---
+        function updateGlobalStats() {
+            let totalSeeds = 0, totalQuality = 0, totalPaused = 0;
+            PLATFORMS.forEach(plat => {
+                const data = platformsData[plat];
+                if (data && !data.isMissing) {
+                    totalSeeds += parseInt(data.stats?.seeds || 0);
+                    totalQuality += parseInt(data.stats?.quality || 0);
+                    totalPaused += parseInt(data.stats?.paused || 0);
+                }
+            });
+            document.getElementById('glb_seeds').value = totalSeeds;
+            document.getElementById('glb_qual').value = totalQuality;
+            document.getElementById('glb_pause').value = totalPaused;
+        }
+
+        function setupRealtimeListeners() {
+            if (IS_HISTORY_VIEW || realtimeListenersActive) return;
+            realtimeListenersActive = true;
+
+            PLATFORMS.forEach(plat => {
+                db.ref(`ems6/plans/${plat}/current`).on('value', (snap) => {
+                    // INSTANT REAL-TIME SYNC: Always update for all users (per user request for on-the-spot updates across sessions)
+                    // Removed previous skip for unsaved changes to ensure instant propagation of ANY change (IPS / IDs / BATCH / RULES / KEYWORD / STATS ...)
+                    // This makes the interface update SUR PLACE instantly in every open tab / device
+
+                    // FIXED: Real-time now always syncs ALL data (deploys, keyword filter, stats, etc.) reliably.
+                    // The previous "if updatedAt same" skip was causing:
+                    // - Other data not updating "sur place"
+                    // - Second keyword change no longer updating
+                    // We keep the original line but force it to always run by disabling the condition.
+
+                    if (!snap.exists()) return;
+
+                    const newData = snap.val();
+                    if (!newData.deploys) newData.deploys = [];
+                    if (!newData.stats) newData.stats = {};
+                    if (!newData.detailsConfig) newData.detailsConfig = {};
+
+                    // Avoid re-render if nothing changed
+                    const current = platformsData[plat];
+                    if (false && current && current.updatedAt === newData.updatedAt) return;   // <<< FIXED LINE (force always sync)
+
+                    platformsData[plat] = newData;
+
+                    // Update platform wrapper if visible
+                    const wrapper = document.getElementById(`wrapper-${plat}`);
+                    if (wrapper) {
+                        // Update deploys
+                        renderPlatformDeploys(plat);
+
+                        // Update filter input (only if not currently typing)
+                        const filterEl = document.getElementById(`filter-${plat}`);
+                        if (filterEl && document.activeElement !== filterEl) {
+                            filterEl.value = newData.filter || '';
+                            updateFilterPreviews(plat, newData.filter || '');
+                        }
+
+                        // Update last update badge text
+                        const badge = wrapper.querySelector('.last-update-badge');
+                        if (badge && newData.updatedAt) badge.innerText = `🕒 LAST UPDATE : ${newData.updatedAt}`;
+                    }
+
+                    // Recalc global totals
+                    updateGlobalStats();
+
+                    // Refresh distributor counts
+                    updateDistributorCounts();
+
+                    // Re-enable save button if it was active (so user can still save their own local work after remote sync)
+                    const saveBtn = document.getElementById('saveBtn');
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        document.getElementById('actionToolbar').classList.remove('hidden');
+                    }
+                });
+            });
+
+            // Global stats listener - also always sync instantly
+            db.ref('ems6/global_stats').on('value', (snap) => {
+                if (!snap.exists()) return;
+                const data = snap.val();
+                ['rdps', 'proxy'].forEach(k => {
+                    const el = document.getElementById('glb_' + k);
+                    if (el && document.activeElement !== el) {
+                        el.value = data[k] || '';
+                    }
+                });
+            });
         }
     </script>
 </body>
